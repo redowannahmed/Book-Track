@@ -14,9 +14,14 @@ import java.util.List;
  */
 public class BookDAO {
     private final DatabaseConfig dbConfig;
+    private String lastMessage;
     
     public BookDAO() {
         this.dbConfig = DatabaseConfig.getInstance();
+    }
+    
+    public String getLastMessage() {
+        return lastMessage;
     }
     
     /**
@@ -124,6 +129,7 @@ public class BookDAO {
             
             int result = stmt.getInt(5);
             String message = stmt.getString(6);
+            this.lastMessage = message;
             
             if (result == 1) {
                 return true;
@@ -161,6 +167,7 @@ public class BookDAO {
             stmt.execute();
             
             int result = stmt.getInt(4);
+            this.lastMessage = stmt.getString(5);
             return result == 1;
             
         } catch (SQLException e) {

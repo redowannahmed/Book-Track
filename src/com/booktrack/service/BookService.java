@@ -17,6 +17,10 @@ public class BookService {
         this.bookDAO = new BookDAO();
         this.googleBooksService = new GoogleBooksService();
     }
+
+    public String getLastMessage() {
+        return bookDAO.getLastMessage();
+    }
     
     // Constructor for dependency injection (testing)
     public BookService(BookDAO bookDAO, GoogleBooksService googleBooksService) {

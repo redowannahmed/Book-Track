@@ -114,16 +114,76 @@ CREATE OR REPLACE PROCEDURE sp_add_book_to_list(
     p_result OUT NUMBER,
     p_message OUT VARCHAR2
 ) AS
-    v_list_id NUMBER;
-    v_count NUMBER;
+    v_list_id      NUMBER;
+    v_count        NUMBER;
+    v_want_id      NUMBER;
+    v_reading_id   NUMBER;
+    v_have_id      NUMBER;
+    v_conflict     NUMBER;
 BEGIN
-    -- Find the user's default list of the specified type
+    -- Resolve default list ids for cross-list logic (ignore if not found)
+    BEGIN
+        SELECT list_id INTO v_want_id FROM custom_lists 
+        WHERE user_id = p_user_id AND list_type = 'WANT_TO_READ' AND is_default = 1;
+    EXCEPTION WHEN NO_DATA_FOUND THEN v_want_id := NULL; END;
+
+    BEGIN
+        SELECT list_id INTO v_reading_id FROM custom_lists 
+        WHERE user_id = p_user_id AND list_type = 'CURRENTLY_READING' AND is_default = 1;
+    EXCEPTION WHEN NO_DATA_FOUND THEN v_reading_id := NULL; END;
+
+    BEGIN
+        SELECT list_id INTO v_have_id FROM custom_lists 
+        WHERE user_id = p_user_id AND list_type = 'HAVE_READ' AND is_default = 1;
+    EXCEPTION WHEN NO_DATA_FOUND THEN v_have_id := NULL; END;
+
+    -- Find the user's default list of the requested type
     SELECT list_id INTO v_list_id
     FROM custom_lists 
     WHERE user_id = p_user_id 
       AND list_type = p_list_type 
       AND is_default = 1;
-    
+
+    -- Enforce coherence between core lists
+    IF p_list_type = 'WANT_TO_READ' THEN
+        -- Block if already finished
+        IF v_have_id IS NOT NULL THEN
+            SELECT COUNT(*) INTO v_conflict FROM custom_list_books 
+            WHERE list_id = v_have_id AND book_id = p_book_id;
+            IF v_conflict > 0 THEN
+                p_result := 0; p_message := 'This book is in Have Read; cannot add to Want to Read.'; RETURN;
+            END IF;
+        END IF;
+        -- Remove from Currently Reading
+        IF v_reading_id IS NOT NULL THEN
+            DELETE FROM custom_list_books WHERE list_id = v_reading_id AND book_id = p_book_id;
+        END IF;
+    ELSIF p_list_type = 'CURRENTLY_READING' THEN
+        -- Block if already finished
+        IF v_have_id IS NOT NULL THEN
+            SELECT COUNT(*) INTO v_conflict FROM custom_list_books 
+            WHERE list_id = v_have_id AND book_id = p_book_id;
+            IF v_conflict > 0 THEN
+                p_result := 0; p_message := 'This book is in Have Read; cannot move to Currently Reading.'; RETURN;
+            END IF;
+        END IF;
+        -- Remove from Want to Read
+        IF v_want_id IS NOT NULL THEN
+            DELETE FROM custom_list_books WHERE list_id = v_want_id AND book_id = p_book_id;
+        END IF;
+    ELSIF p_list_type = 'HAVE_READ' THEN
+        -- Finishing a book removes it from Want to Read and Currently Reading
+        IF v_want_id IS NOT NULL THEN
+            DELETE FROM custom_list_books WHERE list_id = v_want_id AND book_id = p_book_id;
+        END IF;
+        IF v_reading_id IS NOT NULL THEN
+            DELETE FROM custom_list_books WHERE list_id = v_reading_id AND book_id = p_book_id;
+        END IF;
+    ELSE
+        -- FAVORITES or other custom lists: allowed alongside others
+        NULL;
+    END IF;
+
     -- Check if book is already in this list
     SELECT COUNT(*) INTO v_count
     FROM custom_list_books

@@ -366,20 +366,17 @@ public class BookCard extends JPanel {
         addToFavoritesBtn.setToolTipText("Add to Favorites list");
         addToFavoritesBtn.addActionListener(e -> addBookToList("FAVORITES", "Favorites", dialog));
         
-        // Third row - Rate and Review
-        JButton rateReviewBtn = new JButton("Rate & Review");
-        rateReviewBtn.setToolTipText("Rate and/or review this book");
-        rateReviewBtn.addActionListener(e -> showRateReviewDialog(dialog));
-        
-        JButton closeBtn = new JButton("Close");
+    // Third row - Close only (Rate & Review moved to Have Read flow)
+    JButton closeBtn = new JButton("Close");
         closeBtn.addActionListener(e -> dialog.dispose());
         
         buttonPanel.add(addToWantToReadBtn);
         buttonPanel.add(addToCurrentlyReadingBtn);
         buttonPanel.add(addToHaveReadBtn);
         buttonPanel.add(addToFavoritesBtn);
-        buttonPanel.add(rateReviewBtn);
-        buttonPanel.add(closeBtn);
+    // No standalone Rate & Review on landing page dialog
+    buttonPanel.add(new JLabel()); // spacer to balance grid
+    buttonPanel.add(closeBtn);
         
         panel.add(infoPanel, BorderLayout.CENTER);
         panel.add(buttonPanel, BorderLayout.SOUTH);
@@ -616,14 +613,25 @@ public class BookCard extends JPanel {
                 try {
                     boolean success = get();
                     if (success) {
-                        JOptionPane.showMessageDialog(parentDialog, 
-                            "Successfully added '" + book.getTitle() + "' to " + listDisplayName + "!", 
-                            "Success", 
-                            JOptionPane.INFORMATION_MESSAGE);
-                        parentDialog.dispose();
+                        if ("HAVE_READ".equalsIgnoreCase(listType)) {
+                            // After marking as Have Read, prompt the user to rate & review
+                            JOptionPane.showMessageDialog(parentDialog,
+                                "Marked as Have Read. You can now rate and review this book.",
+                                "Have Read",
+                                JOptionPane.INFORMATION_MESSAGE);
+                            // Open nested rate & review flow; this method will close parent dialog on success
+                            showRateReviewDialog(parentDialog);
+                        } else {
+                            JOptionPane.showMessageDialog(parentDialog, 
+                                "Successfully added '" + book.getTitle() + "' to " + listDisplayName + "!", 
+                                "Success", 
+                                JOptionPane.INFORMATION_MESSAGE);
+                            parentDialog.dispose();
+                        }
                     } else {
+                        String reason = bookService.getLastMessage();
                         JOptionPane.showMessageDialog(parentDialog, 
-                            "Failed to add book to " + listDisplayName + ". Please try again.", 
+                            (reason != null && !reason.isEmpty() ? reason : ("Failed to add book to " + listDisplayName + ". Please try again.")), 
                             "Error", 
                             JOptionPane.ERROR_MESSAGE);
                     }
