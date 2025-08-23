@@ -378,4 +378,41 @@ public class UserDAO {
             return false;
         }
     }
+    
+    /**
+     * Get user's custom lists
+     * @param userId User ID
+     * @return List of custom lists data as [list_id, list_name, list_description, list_type, books_count, is_default]
+     */
+    public java.util.List<String[]> getUserCustomLists(Integer userId) {
+        String sql = "{ ? = call fn_get_user_lists(?) }";
+        java.util.List<String[]> lists = new java.util.ArrayList<>();
+        
+        try (Connection conn = dbConfig.getConnection();
+             CallableStatement stmt = conn.prepareCall(sql)) {
+            
+            stmt.registerOutParameter(1, Types.REF_CURSOR);
+            stmt.setInt(2, userId);
+            
+            stmt.execute();
+            
+            try (ResultSet rs = (ResultSet) stmt.getObject(1)) {
+                while (rs.next()) {
+                    lists.add(new String[] {
+                        String.valueOf(rs.getInt("list_id")),
+                        rs.getString("list_name"),
+                        rs.getString("list_description"),
+                        rs.getString("list_type"),
+                        String.valueOf(rs.getInt("books_count")),
+                        String.valueOf(rs.getInt("is_default"))
+                    });
+                }
+            }
+            
+        } catch (SQLException e) {
+            System.err.println("Error getting user custom lists: " + e.getMessage());
+        }
+        
+        return lists;
+    }
 }

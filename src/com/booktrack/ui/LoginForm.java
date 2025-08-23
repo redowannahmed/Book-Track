@@ -1,6 +1,7 @@
 package com.booktrack.ui;
 
 import com.booktrack.model.AuthResponse;
+import com.booktrack.model.User;
 import com.booktrack.service.UserService;
 import com.booktrack.session.SessionManager;
 
@@ -253,11 +254,22 @@ public class LoginForm extends JFrame {
     }
     
     private void openMainApplication() {
-        // For now, show a message that main window will be implemented
-        JOptionPane.showMessageDialog(this, 
-            "Welcome to BookTrack! Main application will open here.", 
-            "BookTrack", 
-            JOptionPane.INFORMATION_MESSAGE);
+        // Get the logged-in user from session manager
+        User loggedInUser = sessionManager.getCurrentUser();
+        if (loggedInUser != null) {
+            // Close this login window
+            this.dispose();
+            
+            // Open the landing page
+            SwingUtilities.invokeLater(() -> {
+                new LandingPage(loggedInUser);
+            });
+        } else {
+            JOptionPane.showMessageDialog(this, 
+                "Error: Unable to retrieve user information", 
+                "Error", 
+                JOptionPane.ERROR_MESSAGE);
+        }
     }
     
     private void showStatus(String message, Color color) {
