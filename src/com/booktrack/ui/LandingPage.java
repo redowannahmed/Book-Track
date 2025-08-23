@@ -21,6 +21,7 @@ public class LandingPage extends JFrame {
     private final User currentUser;
     private final BookService bookService;
     private JPanel booksPanel;
+    private JPanel searchPanel;
     private JTextField searchField;
     private JButton searchButton;
     private JLabel statusLabel;
@@ -127,7 +128,8 @@ public class LandingPage extends JFrame {
     }
     
     private void createSearchSection() {
-        JPanel searchPanel = new JPanel(new BorderLayout(10, 10));
+        // Build but don't add to frame yet; we'll place this above the books grid
+        searchPanel = new JPanel(new BorderLayout(10, 10));
         searchPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 10, 20));
         
         JLabel searchLabel = new JLabel("Search Books:");
@@ -164,19 +166,17 @@ public class LandingPage extends JFrame {
             quickSearchPanel.add(quickBtn);
         }
         
-        searchPanel.add(searchTopPanel, BorderLayout.NORTH);
-        searchPanel.add(quickSearchPanel, BorderLayout.SOUTH);
-        
-        add(searchPanel, BorderLayout.CENTER);
+    searchPanel.add(searchTopPanel, BorderLayout.NORTH);
+    searchPanel.add(quickSearchPanel, BorderLayout.SOUTH);
     }
     
     private void createBooksSection() {
         JPanel mainPanel = new JPanel(new BorderLayout());
         
-        // Status label
-        statusLabel = new JLabel("Loading popular books...");
-        statusLabel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
-        statusLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 16));
+    // Status label
+    statusLabel = new JLabel("Loading popular books...");
+    statusLabel.setBorder(BorderFactory.createEmptyBorder(0, 20, 10, 20));
+    statusLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 16));
         
         // Books grid panel
         booksPanel = new JPanel(new GridLayout(0, GRID_COLUMNS, 15, 15));
@@ -187,10 +187,14 @@ public class LandingPage extends JFrame {
         scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
         
-        mainPanel.add(statusLabel, BorderLayout.NORTH);
+    // Top panel contains Search bar and status text stacked
+    JPanel topPanel = new JPanel(new BorderLayout());
+    topPanel.add(searchPanel, BorderLayout.NORTH);
+    topPanel.add(statusLabel, BorderLayout.SOUTH);
+    mainPanel.add(topPanel, BorderLayout.NORTH);
         mainPanel.add(scrollPane, BorderLayout.CENTER);
         
-        // Replace the center panel with the books section
+        // Replace any existing center component (if present) with the books section including search bar
         Component centerComponent = ((BorderLayout) getContentPane().getLayout()).getLayoutComponent(BorderLayout.CENTER);
         if (centerComponent != null) {
             remove(centerComponent);
