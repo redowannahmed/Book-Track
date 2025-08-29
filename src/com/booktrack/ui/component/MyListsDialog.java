@@ -409,7 +409,18 @@ public class MyListsDialog extends JDialog {
         ratingText.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
         ratingText.setForeground(new Color(127, 140, 141));
         
-        JLabel ratingValue = new JLabel(formatUserRating(book.getAverageRating()));
+        // Get the user's actual rating for this book
+        Double userRating = null;
+        try {
+            Integer bookId = bookDAO.getBookIdByGoogleId(book.getGoogleBooksId());
+            if (bookId != null) {
+                userRating = bookDAO.getUserRating(userId, bookId);
+            }
+        } catch (Exception e) {
+            System.err.println("Error fetching user rating: " + e.getMessage());
+        }
+        
+        JLabel ratingValue = new JLabel(formatUserRating(userRating));
         ratingValue.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
         ratingValue.setForeground(new Color(230, 126, 34));
         
@@ -475,8 +486,8 @@ public class MyListsDialog extends JDialog {
         bookCard.showBookOptionsDialog();
     }
     
-    private String formatUserRating(double rating) {
-        if (rating > 0) {
+    private String formatUserRating(Double rating) {
+        if (rating != null && rating > 0) {
             return String.format("%.1f/5.0", rating);
         }
         return "Not rated yet";
