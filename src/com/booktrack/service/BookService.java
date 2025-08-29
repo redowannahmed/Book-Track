@@ -380,4 +380,150 @@ public class BookService {
             return null;
         }
     }
+    
+    /**
+     * Get all public reviews for a book
+     * @param book Book to get reviews for
+     * @param limit Maximum number of reviews
+     * @return List of review data arrays
+     */
+    public java.util.List<String[]> getBookReviews(Book book, int limit) {
+        try {
+            Integer bookId = findBookIdByGoogleId(book.getGoogleBooksId());
+            
+            if (bookId == null) {
+                return new java.util.ArrayList<>(); // No reviews if book not in database
+            }
+            
+            return bookDAO.getBookReviews(bookId, limit);
+            
+        } catch (Exception e) {
+            System.err.println("Error getting book reviews: " + e.getMessage());
+            return new java.util.ArrayList<>();
+        }
+    }
+    
+    /**
+     * Get rating statistics for a book
+     * @param book Book to get stats for
+     * @return Array with [average_rating, total_ratings, 5_star, 4_star, 3_star, 2_star, 1_star]
+     */
+    public double[] getBookRatingStats(Book book) {
+        try {
+            Integer bookId = findBookIdByGoogleId(book.getGoogleBooksId());
+            
+            if (bookId == null) {
+                return new double[]{0, 0, 0, 0, 0, 0, 0}; // No ratings if book not in database
+            }
+            
+            return bookDAO.getBookRatingStats(bookId);
+            
+        } catch (Exception e) {
+            System.err.println("Error getting book rating stats: " + e.getMessage());
+            return new double[]{0, 0, 0, 0, 0, 0, 0};
+        }
+    }
+    
+    /**
+     * Get total review count for a book
+     * @param book Book to get review count for
+     * @return Review count
+     */
+    public int getBookReviewCount(Book book) {
+        try {
+            Integer bookId = findBookIdByGoogleId(book.getGoogleBooksId());
+            
+            if (bookId == null) {
+                return 0; // No reviews if book not in database
+            }
+            
+            return bookDAO.getBookReviewCount(bookId);
+            
+        } catch (Exception e) {
+            System.err.println("Error getting book review count: " + e.getMessage());
+            return 0;
+        }
+    }
+    
+    /**
+     * Rate and review a book (combines rating and review submission)
+     * @param book Book to rate and review
+     * @param rating Rating (1-5)
+     * @param reviewText Review text (can be null)
+     * @param isPublic Whether review should be public
+     * @return True if successful
+     */
+    public boolean rateAndReviewBook(Book book, int rating, String reviewText, boolean isPublic) {
+        try {
+            // First ensure book exists in database
+            Integer bookId = findBookIdByGoogleId(book.getGoogleBooksId());
+            
+            if (bookId == null) {
+                // Add book to database first using the stored procedure that handles authors
+                bookId = bookDAO.addOrUpdateBook(book);
+                if (bookId == null) {
+                    return false;
+                }
+            }
+            
+            // Submit rating and review
+            boolean success = bookDAO.rateBook(com.booktrack.session.SessionManager.getInstance().getCurrentUserId(), 
+                                               bookId, rating, reviewText, isPublic);
+            
+            return success;
+            
+        } catch (Exception e) {
+            System.err.println("Error rating and reviewing book: " + e.getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Get access to Google Books Service for API calls
+     */
+    public GoogleBooksService getGoogleBooksService() {
+        return this.googleBooksService;
+    }
+    
+    /**
+     * Update authors for a book by fetching fresh data from Google Books API
+     * Returns a Book with updated author information
+     */
+    public Book updateBookAuthors(Book book) {
+        try {
+            if (book == null) {
+                return book;
+            }
+            
+            String searchTerm = null;
+            // Try ISBN13 first, then ISBN10, then title search
+            if (book.getIsbn13() != null && !book.getIsbn13().isEmpty()) {
+                searchTerm = "isbn:" + book.getIsbn13();
+            } else if (book.getIsbn10() != null && !book.getIsbn10().isEmpty()) {
+                searchTerm = "isbn:" + book.getIsbn10();
+            } else if (book.getTitle() != null && !book.getTitle().isEmpty()) {
+                searchTerm = book.getTitle();
+            }
+            
+            if (searchTerm != null) {
+                // Search for the book to get fresh author data
+                List<Book> searchResults = googleBooksService.searchBooks(searchTerm, 5);
+                
+                if (!searchResults.isEmpty()) {
+                    Book freshBook = searchResults.get(0);
+                    if (freshBook.getAuthors() != null && freshBook.getAuthors().length > 0) {
+                        // Update the book object with fresh authors
+                        book.setAuthors(freshBook.getAuthors());
+                        return book;
+                    }
+                }
+            }
+            
+            return book;
+            
+        } catch (Exception e) {
+            System.err.println("Error updating book authors: " + e.getMessage());
+            return book;
+        }
+    }
 }

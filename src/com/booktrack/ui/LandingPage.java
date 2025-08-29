@@ -44,9 +44,12 @@ public class LandingPage extends JFrame {
     private void initializeFrame() {
         setTitle("BookTrack - Welcome " + currentUser.getFullName());
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(900, 700);
+        setSize(1200, 800);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
+        
+        // Modern background
+        getContentPane().setBackground(new Color(245, 247, 250));
         
         // Set application icon (if available)
         try {
@@ -105,96 +108,258 @@ public class LandingPage extends JFrame {
     }
     
     private void createHeader() {
-        JPanel headerPanel = new JPanel(new BorderLayout());
-        headerPanel.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20));
-        headerPanel.setBackground(new Color(0, 123, 255));
+        // Modern gradient-style header
+        JPanel headerPanel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2d = (Graphics2D) g;
+                g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+                
+                // Gradient background
+                GradientPaint gradient = new GradientPaint(
+                    0, 0, new Color(52, 73, 94),
+                    0, getHeight(), new Color(44, 62, 80)
+                );
+                g2d.setPaint(gradient);
+                g2d.fillRect(0, 0, getWidth(), getHeight());
+            }
+        };
+        headerPanel.setLayout(new BorderLayout(20, 20));
+        headerPanel.setBorder(BorderFactory.createEmptyBorder(30, 40, 30, 40));
+        headerPanel.setPreferredSize(new Dimension(0, 120));
         
-        JLabel welcomeLabel = new JLabel("Welcome to BookTrack, " + currentUser.getFirstName() + "!");
-        welcomeLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 24));
+        // Left side - Welcome text
+        JPanel welcomePanel = new JPanel(new BorderLayout(0, 8));
+        welcomePanel.setOpaque(false);
+        
+        JLabel welcomeLabel = new JLabel("📚 Welcome to BookTrack, " + currentUser.getFirstName() + "!");
+        welcomeLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 28));
         welcomeLabel.setForeground(Color.WHITE);
         
-        JLabel subtitleLabel = new JLabel("Discover your next favorite book");
-        subtitleLabel.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 14));
-        subtitleLabel.setForeground(Color.WHITE);
+        JLabel subtitleLabel = new JLabel("Discover, track, and share your reading journey");
+        subtitleLabel.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 16));
+        subtitleLabel.setForeground(new Color(189, 195, 199));
         
-        JPanel textPanel = new JPanel(new BorderLayout());
-        textPanel.setOpaque(false);
-        textPanel.add(welcomeLabel, BorderLayout.NORTH);
-        textPanel.add(subtitleLabel, BorderLayout.SOUTH);
+        welcomePanel.add(welcomeLabel, BorderLayout.NORTH);
+        welcomePanel.add(subtitleLabel, BorderLayout.CENTER);
         
-        headerPanel.add(textPanel, BorderLayout.WEST);
+        // Right side - User info card
+        JPanel userCardPanel = new JPanel(new BorderLayout(10, 5));
+        userCardPanel.setBackground(new Color(255, 255, 255, 30));
+        userCardPanel.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(255, 255, 255, 50), 1),
+            BorderFactory.createEmptyBorder(15, 20, 15, 20)
+        ));
+        userCardPanel.setPreferredSize(new Dimension(250, 0));
+        
+        JLabel userIcon = new JLabel("👤");
+        userIcon.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 24));
+        userIcon.setForeground(Color.WHITE);
+        
+        JPanel userInfoPanel = new JPanel(new BorderLayout(0, 3));
+        userInfoPanel.setOpaque(false);
+        
+        JLabel userNameLabel = new JLabel(currentUser.getFullName());
+        userNameLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 14));
+        userNameLabel.setForeground(Color.WHITE);
+        
+        JLabel userEmailLabel = new JLabel(currentUser.getEmail());
+        userEmailLabel.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
+        userEmailLabel.setForeground(new Color(189, 195, 199));
+        
+        userInfoPanel.add(userNameLabel, BorderLayout.NORTH);
+        userInfoPanel.add(userEmailLabel, BorderLayout.CENTER);
+        
+        userCardPanel.add(userIcon, BorderLayout.WEST);
+        userCardPanel.add(userInfoPanel, BorderLayout.CENTER);
+        
+        headerPanel.add(welcomePanel, BorderLayout.CENTER);
+        headerPanel.add(userCardPanel, BorderLayout.EAST);
         
         add(headerPanel, BorderLayout.NORTH);
     }
     
     private void createSearchSection() {
-        // Build but don't add to frame yet; we'll place this above the books grid
-        searchPanel = new JPanel(new BorderLayout(10, 10));
-        searchPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 10, 20));
+        // Modern search card design
+        searchPanel = new JPanel(new BorderLayout(0, 15));
+        searchPanel.setBackground(Color.WHITE);
+        searchPanel.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(189, 195, 199), 1),
+            BorderFactory.createEmptyBorder(25, 30, 25, 30)
+        ));
         
-        JLabel searchLabel = new JLabel("Search Books:");
-        searchLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 14));
+        // Search title with icon
+        JLabel searchTitle = new JLabel("🔍 Search Books");
+        searchTitle.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 18));
+        searchTitle.setForeground(new Color(52, 73, 94));
         
+        // Search input section
+        JPanel searchInputSection = new JPanel(new BorderLayout(15, 0));
+        searchInputSection.setOpaque(false);
+        
+        // Modern search field
         searchField = new JTextField();
         searchField.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 14));
-        searchField.setPreferredSize(new Dimension(300, 30));
+        searchField.setPreferredSize(new Dimension(400, 40));
+        searchField.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(189, 195, 199), 1),
+            BorderFactory.createEmptyBorder(10, 15, 10, 15)
+        ));
+        searchField.setBackground(new Color(248, 249, 250));
         
-        searchButton = new JButton("Search");
-        searchButton.setPreferredSize(new Dimension(80, 30));
-        searchButton.addActionListener(e -> performSearch());
+        // Modern search button
+        searchButton = new JButton("🔍 Search");
+        searchButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 14));
+        searchButton.setPreferredSize(new Dimension(120, 40));
+        searchButton.setBackground(new Color(52, 152, 219));
+        searchButton.setForeground(Color.WHITE);
+        searchButton.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+        searchButton.setFocusPainted(false);
+        searchButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        searchButton.addActionListener(evt -> performSearch());
+        
+        // Hover effect for search button
+        searchButton.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseEntered(java.awt.event.MouseEvent e) {
+                searchButton.setBackground(new Color(41, 128, 185));
+            }
+            
+            @Override
+            public void mouseExited(java.awt.event.MouseEvent e) {
+                searchButton.setBackground(new Color(52, 152, 219));
+            }
+        });
         
         // Enter key support for search
-        searchField.addActionListener(e -> performSearch());
+        searchField.addActionListener(evt -> performSearch());
         
-        JPanel searchInputPanel = new JPanel(new BorderLayout(5, 0));
-        searchInputPanel.add(searchField, BorderLayout.CENTER);
-        searchInputPanel.add(searchButton, BorderLayout.EAST);
+        searchInputSection.add(searchField, BorderLayout.CENTER);
+        searchInputSection.add(searchButton, BorderLayout.EAST);
         
-        JPanel searchTopPanel = new JPanel(new BorderLayout());
-        searchTopPanel.add(searchLabel, BorderLayout.WEST);
-        searchTopPanel.add(searchInputPanel, BorderLayout.CENTER);
+        // Quick search section
+        JPanel quickSearchSection = new JPanel(new BorderLayout(0, 10));
+        quickSearchSection.setOpaque(false);
         
-        // Quick search buttons
-        JPanel quickSearchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        quickSearchPanel.add(new JLabel("Quick searches: "));
+        JLabel quickSearchLabel = new JLabel("📂 Quick Categories:");
+        quickSearchLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 14));
+        quickSearchLabel.setForeground(new Color(127, 140, 141));
+        
+        JPanel quickButtonsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 5));
+        quickButtonsPanel.setOpaque(false);
         
         String[] quickSearches = {"Fiction", "Romance", "Mystery", "Sci-Fi", "Biography", "History"};
         for (String category : quickSearches) {
             JButton quickBtn = new JButton(category);
-            quickBtn.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 11));
-            quickBtn.addActionListener(e -> quickSearch(category));
-            quickSearchPanel.add(quickBtn);
+            quickBtn.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
+            quickBtn.setBackground(new Color(236, 240, 241));
+            quickBtn.setForeground(new Color(52, 73, 94));
+            quickBtn.setBorder(BorderFactory.createEmptyBorder(8, 15, 8, 15));
+            quickBtn.setFocusPainted(false);
+            quickBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            quickBtn.addActionListener(evt -> quickSearch(category));
+            
+            // Hover effect for quick buttons
+            quickBtn.addMouseListener(new java.awt.event.MouseAdapter() {
+                @Override
+                public void mouseEntered(java.awt.event.MouseEvent e) {
+                    quickBtn.setBackground(new Color(52, 152, 219));
+                    quickBtn.setForeground(Color.WHITE);
+                }
+                
+                @Override
+                public void mouseExited(java.awt.event.MouseEvent e) {
+                    quickBtn.setBackground(new Color(236, 240, 241));
+                    quickBtn.setForeground(new Color(52, 73, 94));
+                }
+            });
+            
+            quickButtonsPanel.add(quickBtn);
         }
         
-    searchPanel.add(searchTopPanel, BorderLayout.NORTH);
-    searchPanel.add(quickSearchPanel, BorderLayout.SOUTH);
+        quickSearchSection.add(quickSearchLabel, BorderLayout.NORTH);
+        quickSearchSection.add(quickButtonsPanel, BorderLayout.CENTER);
+        
+        searchPanel.add(searchTitle, BorderLayout.NORTH);
+        searchPanel.add(searchInputSection, BorderLayout.CENTER);
+        searchPanel.add(quickSearchSection, BorderLayout.SOUTH);
     }
     
     private void createBooksSection() {
-        JPanel mainPanel = new JPanel(new BorderLayout());
+        JPanel mainPanel = new JPanel(new BorderLayout(0, 20));
+        mainPanel.setBackground(new Color(245, 247, 250));
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(25, 30, 30, 30));
         
-    // Status label
-    statusLabel = new JLabel("Loading popular books...");
-    statusLabel.setBorder(BorderFactory.createEmptyBorder(0, 20, 10, 20));
-    statusLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 16));
+        // Search panel container
+        JPanel searchContainer = new JPanel(new BorderLayout());
+        searchContainer.setOpaque(false);
+        searchContainer.add(searchPanel, BorderLayout.CENTER);
         
-        // Books grid panel
-        booksPanel = new JPanel(new GridLayout(0, GRID_COLUMNS, 15, 15));
-        booksPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        // Books section with modern header
+        JPanel booksContainer = new JPanel(new BorderLayout(0, 15));
+        booksContainer.setOpaque(false);
         
+        // Status/title section
+        JPanel titleSection = new JPanel(new BorderLayout());
+        titleSection.setOpaque(false);
+        
+        statusLabel = new JLabel("📚 Loading popular books...");
+        statusLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 20));
+        statusLabel.setForeground(new Color(52, 73, 94));
+        statusLabel.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 0));
+        
+        titleSection.add(statusLabel, BorderLayout.WEST);
+        
+        // Books grid with modern spacing
+        booksPanel = new JPanel(new GridLayout(0, GRID_COLUMNS, 20, 25));
+        booksPanel.setBackground(new Color(245, 247, 250));
+        booksPanel.setBorder(BorderFactory.createEmptyBorder(10, 5, 10, 5));
+        
+        // Modern scroll pane
         scrollPane = new JScrollPane(booksPanel);
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        scrollPane.setBorder(null);
+        scrollPane.setBackground(new Color(245, 247, 250));
+        scrollPane.getViewport().setBackground(new Color(245, 247, 250));
         
-    // Top panel contains Search bar and status text stacked
-    JPanel topPanel = new JPanel(new BorderLayout());
-    topPanel.add(searchPanel, BorderLayout.NORTH);
-    topPanel.add(statusLabel, BorderLayout.SOUTH);
-    mainPanel.add(topPanel, BorderLayout.NORTH);
-        mainPanel.add(scrollPane, BorderLayout.CENTER);
+        // Style the scrollbar
+        scrollPane.getVerticalScrollBar().setBackground(new Color(245, 247, 250));
+        scrollPane.getVerticalScrollBar().setUI(new javax.swing.plaf.basic.BasicScrollBarUI() {
+            @Override
+            protected void configureScrollBarColors() {
+                this.thumbColor = new Color(189, 195, 199);
+                this.trackColor = new Color(236, 240, 241);
+            }
+            
+            @Override
+            protected JButton createDecreaseButton(int orientation) {
+                return createInvisibleButton();
+            }
+            
+            @Override
+            protected JButton createIncreaseButton(int orientation) {
+                return createInvisibleButton();
+            }
+            
+            private JButton createInvisibleButton() {
+                JButton button = new JButton();
+                button.setPreferredSize(new Dimension(0, 0));
+                button.setMinimumSize(new Dimension(0, 0));
+                button.setMaximumSize(new Dimension(0, 0));
+                return button;
+            }
+        });
         
-        // Replace any existing center component (if present) with the books section including search bar
+        booksContainer.add(titleSection, BorderLayout.NORTH);
+        booksContainer.add(scrollPane, BorderLayout.CENTER);
+        
+        mainPanel.add(searchContainer, BorderLayout.NORTH);
+        mainPanel.add(booksContainer, BorderLayout.CENTER);
+        
+        // Replace any existing center component
         Component centerComponent = ((BorderLayout) getContentPane().getLayout()).getLayoutComponent(BorderLayout.CENTER);
         if (centerComponent != null) {
             remove(centerComponent);
@@ -203,8 +368,23 @@ public class LandingPage extends JFrame {
     }
     
     private void loadInitialBooks() {
-        statusLabel.setText("Loading popular books...");
+        statusLabel.setText("📚 Loading popular books...");
         booksPanel.removeAll();
+        
+        // Add loading state
+        JPanel loadingPanel = new JPanel(new BorderLayout());
+        loadingPanel.setBackground(new Color(245, 247, 250));
+        loadingPanel.setPreferredSize(new Dimension(0, 200));
+        
+        JLabel loadingLabel = new JLabel("⏳ Loading amazing books for you...");
+        loadingLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 18));
+        loadingLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        loadingLabel.setForeground(new Color(52, 152, 219));
+        
+        loadingPanel.add(loadingLabel, BorderLayout.CENTER);
+        booksPanel.add(loadingPanel);
+        booksPanel.revalidate();
+        booksPanel.repaint();
         
         SwingWorker<List<Book>, Void> worker = new SwingWorker<List<Book>, Void>() {
             @Override
@@ -228,12 +408,28 @@ public class LandingPage extends JFrame {
     private void performSearch() {
         String query = searchField.getText().trim();
         if (query.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Please enter a search term", "Search", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, 
+                "Please enter a search term to find books!", 
+                "Search Required", 
+                JOptionPane.INFORMATION_MESSAGE);
             return;
         }
         
-        statusLabel.setText("Searching for: " + query);
+        statusLabel.setText("🔍 Searching for: " + query);
         booksPanel.removeAll();
+        
+        // Add searching state
+        JPanel searchingPanel = new JPanel(new BorderLayout());
+        searchingPanel.setBackground(new Color(245, 247, 250));
+        searchingPanel.setPreferredSize(new Dimension(0, 200));
+        
+        JLabel searchingLabel = new JLabel("🔍 Searching for \"" + query + "\"...");
+        searchingLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 18));
+        searchingLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        searchingLabel.setForeground(new Color(52, 152, 219));
+        
+        searchingPanel.add(searchingLabel, BorderLayout.CENTER);
+        booksPanel.add(searchingPanel);
         booksPanel.revalidate();
         booksPanel.repaint();
         
@@ -247,7 +443,7 @@ public class LandingPage extends JFrame {
             protected void done() {
                 try {
                     List<Book> books = get();
-                    displayBooks(books, "Search Results for: " + query);
+                    displayBooks(books, "Search Results for \"" + query + "\"");
                 } catch (Exception e) {
                     showError("Search failed: " + e.getMessage());
                 }
@@ -265,14 +461,44 @@ public class LandingPage extends JFrame {
         booksPanel.removeAll();
         
         if (books == null || books.isEmpty()) {
-            statusLabel.setText("No books found");
-            JLabel noResultsLabel = new JLabel("No books found. Try a different search term.");
-            noResultsLabel.setHorizontalAlignment(SwingConstants.CENTER);
-            noResultsLabel.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 16));
-            noResultsLabel.setForeground(Color.GRAY);
-            booksPanel.add(noResultsLabel);
+            statusLabel.setText("📚 No books found");
+            
+            // Modern empty state
+            JPanel emptyPanel = new JPanel(new BorderLayout());
+            emptyPanel.setBackground(new Color(245, 247, 250));
+            emptyPanel.setPreferredSize(new Dimension(0, 300));
+            
+            JPanel emptyContent = new JPanel(new BorderLayout(0, 15));
+            emptyContent.setOpaque(false);
+            emptyContent.setBorder(BorderFactory.createEmptyBorder(60, 40, 60, 40));
+            
+            JLabel emptyIcon = new JLabel("📖");
+            emptyIcon.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 72));
+            emptyIcon.setHorizontalAlignment(SwingConstants.CENTER);
+            emptyIcon.setForeground(new Color(189, 195, 199));
+            
+            JLabel emptyTitle = new JLabel("No Books Found");
+            emptyTitle.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 24));
+            emptyTitle.setHorizontalAlignment(SwingConstants.CENTER);
+            emptyTitle.setForeground(new Color(127, 140, 141));
+            
+            JLabel emptyDesc = new JLabel("<html><center>We couldn't find any books matching your search.<br/>Try different keywords or browse our categories.</center></html>");
+            emptyDesc.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 14));
+            emptyDesc.setHorizontalAlignment(SwingConstants.CENTER);
+            emptyDesc.setForeground(new Color(149, 165, 166));
+            
+            JPanel textPanel = new JPanel(new BorderLayout(0, 10));
+            textPanel.setOpaque(false);
+            textPanel.add(emptyTitle, BorderLayout.NORTH);
+            textPanel.add(emptyDesc, BorderLayout.CENTER);
+            
+            emptyContent.add(emptyIcon, BorderLayout.NORTH);
+            emptyContent.add(textPanel, BorderLayout.CENTER);
+            
+            emptyPanel.add(emptyContent, BorderLayout.CENTER);
+            booksPanel.add(emptyPanel);
         } else {
-            statusLabel.setText(title + " (" + books.size() + " books)");
+            statusLabel.setText("📚 " + title + " • " + books.size() + " book" + (books.size() != 1 ? "s" : ""));
             
             for (Book book : books) {
                 BookCard bookCard = new BookCard(book);
@@ -285,14 +511,43 @@ public class LandingPage extends JFrame {
     }
     
     private void showError(String message) {
-        statusLabel.setText("Error occurred");
+        statusLabel.setText("⚠️ Error occurred");
         booksPanel.removeAll();
         
-        JLabel errorLabel = new JLabel("<html><center>Error: " + message + "<br>Please try again later.</center></html>");
-        errorLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        errorLabel.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 14));
-        errorLabel.setForeground(Color.RED);
-        booksPanel.add(errorLabel);
+        // Modern error state
+        JPanel errorPanel = new JPanel(new BorderLayout());
+        errorPanel.setBackground(new Color(245, 247, 250));
+        errorPanel.setPreferredSize(new Dimension(0, 300));
+        
+        JPanel errorContent = new JPanel(new BorderLayout(0, 15));
+        errorContent.setOpaque(false);
+        errorContent.setBorder(BorderFactory.createEmptyBorder(60, 40, 60, 40));
+        
+        JLabel errorIcon = new JLabel("⚠️");
+        errorIcon.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 72));
+        errorIcon.setHorizontalAlignment(SwingConstants.CENTER);
+        errorIcon.setForeground(new Color(231, 76, 60));
+        
+        JLabel errorTitle = new JLabel("Oops! Something went wrong");
+        errorTitle.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 24));
+        errorTitle.setHorizontalAlignment(SwingConstants.CENTER);
+        errorTitle.setForeground(new Color(231, 76, 60));
+        
+        JLabel errorDesc = new JLabel("<html><center>" + message + "<br/>Please try again later or contact support if the problem persists.</center></html>");
+        errorDesc.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 14));
+        errorDesc.setHorizontalAlignment(SwingConstants.CENTER);
+        errorDesc.setForeground(new Color(127, 140, 141));
+        
+        JPanel textPanel = new JPanel(new BorderLayout(0, 10));
+        textPanel.setOpaque(false);
+        textPanel.add(errorTitle, BorderLayout.NORTH);
+        textPanel.add(errorDesc, BorderLayout.CENTER);
+        
+        errorContent.add(errorIcon, BorderLayout.NORTH);
+        errorContent.add(textPanel, BorderLayout.CENTER);
+        
+        errorPanel.add(errorContent, BorderLayout.CENTER);
+        booksPanel.add(errorPanel);
         
         booksPanel.revalidate();
         booksPanel.repaint();
@@ -331,7 +586,13 @@ public class LandingPage extends JFrame {
         
         if (result == JOptionPane.YES_OPTION) {
             dispose();
-            SwingUtilities.invokeLater(() -> new LoginForm().setVisible(true));
+            SwingUtilities.invokeLater(() -> {
+                try {
+                    new com.booktrack.ui.LoginForm().setVisible(true);
+                } catch (Exception e) {
+                    System.err.println("Error opening login form: " + e.getMessage());
+                }
+            });
         }
     }
 }

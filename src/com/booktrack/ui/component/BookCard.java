@@ -82,11 +82,28 @@ public class BookCard extends JPanel {
         titleLabel.setToolTipText(book.getTitle());
         
         // Author
-        authorLabel = new JLabel(truncateText(book.getAuthorsAsString(), 25));
+        String authorText = book.getAuthorsAsString();
+        
+        // Check if we need to fetch fresh author data
+        if ("Unknown Author".equals(authorText) && book.getGoogleBooksId() != null) {
+            // Try to fetch fresh author data from Google Books API
+            try {
+                Book tempBook = bookService.updateBookAuthors(book);
+                if (tempBook.getAuthors() != null && tempBook.getAuthors().length > 0) {
+                    // Update the original book's authors
+                    book.setAuthors(tempBook.getAuthors());
+                    authorText = book.getAuthorsAsString();
+                }
+            } catch (Exception e) {
+                System.err.println("Failed to fetch fresh author data for card display: " + e.getMessage());
+            }
+        }
+        
+        authorLabel = new JLabel(truncateText(authorText, 25));
         authorLabel.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 10));
         authorLabel.setForeground(Color.GRAY);
         authorLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        authorLabel.setToolTipText(book.getAuthorsAsString());
+        authorLabel.setToolTipText(authorText);
         
         // Rating
         ratingLabel = new JLabel(formatRating(book.getAverageRating()));
@@ -187,8 +204,16 @@ public class BookCard extends JPanel {
         if (isMyListsMode) {
             showMyListsBookDialog();
         } else {
-            showStandardBookDialog();
+            showBookDetailsDialog();
         }
+    }
+    
+    private void showBookDetailsDialog() {
+        BookDetailsDialog detailsDialog = new BookDetailsDialog(
+            (Frame) SwingUtilities.getWindowAncestor(this), 
+            book
+        );
+        detailsDialog.setVisible(true);
     }
     
     private void showMyListsBookDialog() {
@@ -212,7 +237,24 @@ public class BookCard extends JPanel {
         // Book info header
         JPanel infoPanel = new JPanel(new GridLayout(0, 1, 5, 5));
         infoPanel.add(new JLabel("Title: " + book.getTitle()));
-        infoPanel.add(new JLabel("Author: " + book.getAuthorsAsString()));
+        
+        // Handle missing authors - try to get fresh data if needed
+        String authorText = book.getAuthorsAsString();
+        if ("Unknown Author".equals(authorText) && book.getGoogleBooksId() != null) {
+            // Try to fetch fresh author data from Google Books API
+            try {
+                Book tempBook = bookService.updateBookAuthors(book);
+                if (tempBook.getAuthors() != null && tempBook.getAuthors().length > 0) {
+                    // Update the original book's authors
+                    book.setAuthors(tempBook.getAuthors());
+                    authorText = book.getAuthorsAsString();
+                }
+            } catch (Exception e) {
+                System.err.println("Failed to fetch fresh book data: " + e.getMessage());
+            }
+        }
+        
+        infoPanel.add(new JLabel("Author: " + authorText));
         if (book.getPublisher() != null) {
             infoPanel.add(new JLabel("Publisher: " + book.getPublisher()));
         }
@@ -294,7 +336,7 @@ public class BookCard extends JPanel {
                 // Close button
                 JPanel buttonPanel = new JPanel(new FlowLayout());
                 JButton closeBtn = new JButton("Close");
-                closeBtn.addActionListener(e -> dialog.dispose());
+                closeBtn.addActionListener(_ -> dialog.dispose());
                 buttonPanel.add(closeBtn);
                 
                 panel.add(buttonPanel, BorderLayout.SOUTH);
@@ -313,76 +355,6 @@ public class BookCard extends JPanel {
     // Start background work BEFORE showing the modal dialog
     dataLoader.execute();
     dialog.setVisible(true);
-    }
-    
-    private void showStandardBookDialog() {
-        JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), 
-                                   "Book Options - " + book.getTitle(), true);
-        dialog.setSize(500, 400);
-        dialog.setLocationRelativeTo(this);
-        
-        JPanel panel = new JPanel(new BorderLayout(10, 10));
-        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-        
-        // Book info
-        JPanel infoPanel = new JPanel(new GridLayout(0, 1, 5, 5));
-        infoPanel.add(new JLabel("Title: " + book.getTitle()));
-        infoPanel.add(new JLabel("Author: " + book.getAuthorsAsString()));
-        if (book.getPublisher() != null) {
-            infoPanel.add(new JLabel("Publisher: " + book.getPublisher()));
-        }
-        infoPanel.add(new JLabel("Rating: " + formatRating(book.getAverageRating())));
-        
-        if (book.getDescription() != null) {
-            JTextArea descArea = new JTextArea(book.getShortDescription());
-            descArea.setWrapStyleWord(true);
-            descArea.setLineWrap(true);
-            descArea.setEditable(false);
-            descArea.setBackground(panel.getBackground());
-            JScrollPane scrollPane = new JScrollPane(descArea);
-            scrollPane.setPreferredSize(new Dimension(450, 80));
-            scrollPane.setBorder(BorderFactory.createTitledBorder("Description"));
-            infoPanel.add(scrollPane);
-        }
-        
-        // Action buttons arranged in a grid
-        JPanel buttonPanel = new JPanel(new GridLayout(3, 2, 10, 10));
-        
-        // First row - Add to lists
-        JButton addToWantToReadBtn = new JButton("Want to Read");
-        addToWantToReadBtn.setToolTipText("Add to Want to Read list");
-        addToWantToReadBtn.addActionListener(e -> addBookToList("WANT_TO_READ", "Want to Read", dialog));
-        
-        JButton addToCurrentlyReadingBtn = new JButton("Currently Reading");
-        addToCurrentlyReadingBtn.setToolTipText("Add to Currently Reading list");
-        addToCurrentlyReadingBtn.addActionListener(e -> addBookToList("CURRENTLY_READING", "Currently Reading", dialog));
-        
-        // Second row - More lists
-        JButton addToHaveReadBtn = new JButton("Have Read");
-        addToHaveReadBtn.setToolTipText("Add to Have Read list");
-        addToHaveReadBtn.addActionListener(e -> addBookToList("HAVE_READ", "Have Read", dialog));
-        
-        JButton addToFavoritesBtn = new JButton("Favorites");
-        addToFavoritesBtn.setToolTipText("Add to Favorites list");
-        addToFavoritesBtn.addActionListener(e -> addBookToList("FAVORITES", "Favorites", dialog));
-        
-    // Third row - Close only (Rate & Review moved to Have Read flow)
-    JButton closeBtn = new JButton("Close");
-        closeBtn.addActionListener(e -> dialog.dispose());
-        
-        buttonPanel.add(addToWantToReadBtn);
-        buttonPanel.add(addToCurrentlyReadingBtn);
-        buttonPanel.add(addToHaveReadBtn);
-        buttonPanel.add(addToFavoritesBtn);
-    // No standalone Rate & Review on landing page dialog
-    buttonPanel.add(new JLabel()); // spacer to balance grid
-    buttonPanel.add(closeBtn);
-        
-        panel.add(infoPanel, BorderLayout.CENTER);
-        panel.add(buttonPanel, BorderLayout.SOUTH);
-        
-        dialog.add(panel);
-        dialog.setVisible(true);
     }
     
     private void showRateReviewDialog(JDialog parentDialog) {
@@ -446,7 +418,7 @@ public class BookCard extends JPanel {
         );
         
         // Override the submit button action
-        rateDialog.addSubmitListener(actionEvent -> handleRateReviewSubmit(rateDialog, parentDialog));
+        rateDialog.addSubmitListener(_ -> handleRateReviewSubmit(rateDialog, parentDialog));
         rateDialog.setVisible(true);
     }
     
@@ -460,7 +432,7 @@ public class BookCard extends JPanel {
         );
         
         // Override the submit button action
-        rateDialog.addSubmitListener(actionEvent -> handleRateReviewSubmit(rateDialog, parentDialog));
+        rateDialog.addSubmitListener(_ -> handleRateReviewSubmit(rateDialog, parentDialog));
         rateDialog.setVisible(true);
     }
     
@@ -569,82 +541,5 @@ public class BookCard extends JPanel {
     
     public Book getBook() {
         return book;
-    }
-    
-    /**
-     * Add book to user's list
-     * @param listType Type of list (to_read, currently_reading, etc.)
-     * @param listDisplayName Display name for user feedback
-     * @param parentDialog Parent dialog to close after success
-     */
-    private void addBookToList(String listType, String listDisplayName, JDialog parentDialog) {
-        Integer userId = SessionManager.getInstance().getCurrentUserId();
-        
-        if (userId == null) {
-            JOptionPane.showMessageDialog(parentDialog, 
-                "Please log in to add books to your list.", 
-                "Login Required", 
-                JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-        
-        // Show loading message
-        JProgressBar progressBar = new JProgressBar();
-        progressBar.setIndeterminate(true);
-        progressBar.setStringPainted(true);
-        progressBar.setString("Adding book to " + listDisplayName + "...");
-        
-        JDialog progressDialog = new JDialog(parentDialog, "Adding Book", true);
-        progressDialog.add(progressBar);
-        progressDialog.setSize(300, 80);
-        progressDialog.setLocationRelativeTo(parentDialog);
-        
-        // Add book in background thread
-        SwingWorker<Boolean, Void> worker = new SwingWorker<Boolean, Void>() {
-            @Override
-            protected Boolean doInBackground() throws Exception {
-                return bookService.addBookToUserList(userId, listType, book, null);
-            }
-            
-            @Override
-            protected void done() {
-                progressDialog.dispose();
-                
-                try {
-                    boolean success = get();
-                    if (success) {
-                        if ("HAVE_READ".equalsIgnoreCase(listType)) {
-                            // After marking as Have Read, prompt the user to rate & review
-                            JOptionPane.showMessageDialog(parentDialog,
-                                "Marked as Have Read. You can now rate and review this book.",
-                                "Have Read",
-                                JOptionPane.INFORMATION_MESSAGE);
-                            // Open nested rate & review flow; this method will close parent dialog on success
-                            showRateReviewDialog(parentDialog);
-                        } else {
-                            JOptionPane.showMessageDialog(parentDialog, 
-                                "Successfully added '" + book.getTitle() + "' to " + listDisplayName + "!", 
-                                "Success", 
-                                JOptionPane.INFORMATION_MESSAGE);
-                            parentDialog.dispose();
-                        }
-                    } else {
-                        String reason = bookService.getLastMessage();
-                        JOptionPane.showMessageDialog(parentDialog, 
-                            (reason != null && !reason.isEmpty() ? reason : ("Failed to add book to " + listDisplayName + ". Please try again.")), 
-                            "Error", 
-                            JOptionPane.ERROR_MESSAGE);
-                    }
-                } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(parentDialog, 
-                        "Error: " + ex.getMessage(), 
-                        "Error", 
-                        JOptionPane.ERROR_MESSAGE);
-                }
-            }
-        };
-        
-        worker.execute();
-        progressDialog.setVisible(true);
     }
 }

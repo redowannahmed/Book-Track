@@ -136,13 +136,88 @@ CREATE OR REPLACE FUNCTION fn_get_user_review(
     review_cursor SYS_REFCURSOR;
 BEGIN
     OPEN review_cursor FOR
-        SELECT review_id, review_title, review_text, is_spoiler, is_public,
-               created_at, updated_at
+        SELECT review_id, review_title, 
+               CASE 
+                   WHEN review_text IS NOT NULL THEN 
+                       SUBSTR(review_text, 1, 4000)  -- Convert CLOB to VARCHAR2
+                   ELSE 
+                       NULL 
+               END as review_text,
+               is_spoiler, is_public, created_at, updated_at
         FROM book_reviews
         WHERE user_id = p_user_id AND book_id = p_book_id;
     
     RETURN review_cursor;
 END fn_get_user_review;
+/
+
+-- Function to get all reviews for a book (public reviews only)
+CREATE OR REPLACE FUNCTION fn_get_book_reviews(
+    p_book_id IN NUMBER,
+    p_limit IN NUMBER DEFAULT 10
+) RETURN SYS_REFCURSOR AS
+    reviews_cursor SYS_REFCURSOR;
+BEGIN
+    OPEN reviews_cursor FOR
+        SELECT br.review_id, br.review_title, 
+               CASE 
+                   WHEN br.review_text IS NOT NULL THEN 
+                       SUBSTR(br.review_text, 1, 4000)  -- Convert CLOB to VARCHAR2
+                   ELSE 
+                       NULL 
+               END as review_text,
+               br.is_spoiler, br.created_at, br.updated_at, br.likes_count,
+               u.username, u.first_name, u.last_name,
+               -- Get user's rating for this book if they rated it
+               (SELECT rating FROM book_ratings br2 WHERE br2.user_id = br.user_id AND br2.book_id = br.book_id) as user_rating
+        FROM book_reviews br
+        JOIN users u ON br.user_id = u.user_id
+        WHERE br.book_id = p_book_id 
+          AND br.is_public = 1
+        ORDER BY br.created_at DESC
+        FETCH FIRST p_limit ROWS ONLY;
+    
+    RETURN reviews_cursor;
+END fn_get_book_reviews;
+/
+
+-- Function to get aggregate rating statistics for a book
+CREATE OR REPLACE FUNCTION fn_get_book_rating_stats(p_book_id IN NUMBER)
+RETURN SYS_REFCURSOR AS
+    stats_cursor SYS_REFCURSOR;
+BEGIN
+    OPEN stats_cursor FOR
+        SELECT 
+            NVL(ROUND(AVG(rating), 2), 0) as average_rating,
+            COUNT(*) as total_ratings,
+            COUNT(CASE WHEN rating = 5 THEN 1 END) as five_stars,
+            COUNT(CASE WHEN rating = 4 THEN 1 END) as four_stars,
+            COUNT(CASE WHEN rating = 3 THEN 1 END) as three_stars,
+            COUNT(CASE WHEN rating = 2 THEN 1 END) as two_stars,
+            COUNT(CASE WHEN rating = 1 THEN 1 END) as one_star
+        FROM book_ratings
+        WHERE book_id = p_book_id;
+    
+    RETURN stats_cursor;
+END fn_get_book_rating_stats;
+/
+
+-- Function to get total review count for a book
+CREATE OR REPLACE FUNCTION fn_get_book_review_count(p_book_id IN NUMBER)
+RETURN NUMBER AS
+    v_count NUMBER;
+BEGIN
+    SELECT COUNT(*)
+    INTO v_count
+    FROM book_reviews
+    WHERE book_id = p_book_id AND is_public = 1;
+    
+    RETURN v_count;
+    
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN 0;
+END fn_get_book_review_count;
 /
 
 -- Procedure to delete a book rating
@@ -219,28 +294,6 @@ EXCEPTION
 END sp_delete_review;
 /
 
--- Function to get all reviews for a book (public reviews only)
-CREATE OR REPLACE FUNCTION fn_get_book_reviews(
-    p_book_id IN NUMBER,
-    p_limit IN NUMBER DEFAULT 10
-) RETURN SYS_REFCURSOR AS
-    reviews_cursor SYS_REFCURSOR;
-BEGIN
-    OPEN reviews_cursor FOR
-        SELECT br.review_id, br.review_title, br.review_text, br.is_spoiler,
-               br.created_at, br.updated_at, br.likes_count,
-               u.username, u.first_name, u.last_name
-        FROM book_reviews br
-        JOIN users u ON br.user_id = u.user_id
-        WHERE br.book_id = p_book_id 
-          AND br.is_public = 1
-        ORDER BY br.created_at DESC
-        FETCH FIRST p_limit ROWS ONLY;
-    
-    RETURN reviews_cursor;
-END fn_get_book_reviews;
-/
-
-SHOW ERRORS
+SHOW ERRORS;
 
 SELECT 'Rating and Review procedures created successfully!' as STATUS FROM DUAL;
