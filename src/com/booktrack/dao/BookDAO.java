@@ -2,11 +2,13 @@ package com.booktrack.dao;
 
 import com.booktrack.config.DatabaseConfig;
 import com.booktrack.model.Book;
+import com.booktrack.service.GenreMappingService;
 
 import java.io.StringReader;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Book Data Access Object
@@ -14,10 +16,12 @@ import java.util.List;
  */
 public class BookDAO {
     private final DatabaseConfig dbConfig;
+    private final GenreMappingService genreMappingService;
     private String lastMessage;
     
     public BookDAO() {
         this.dbConfig = DatabaseConfig.getInstance();
+        this.genreMappingService = new GenreMappingService();
     }
     
     public String getLastMessage() {
@@ -86,6 +90,11 @@ public class BookDAO {
             Integer bookId = stmt.getInt(18);
             
             if (result == 1) {
+                // Automatically assign genres based on book categories
+                if (book.getCategories() != null && book.getCategories().length > 0) {
+                    Set<Integer> genreIds = genreMappingService.mapCategoriesToGenreIds(book.getCategories());
+                    genreMappingService.saveBookGenres(bookId, genreIds);
+                }
                 return bookId;
             } else {
                 System.err.println("Failed to add/update book: " + message);

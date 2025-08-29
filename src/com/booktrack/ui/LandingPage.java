@@ -5,6 +5,7 @@ import com.booktrack.model.User;
 import com.booktrack.service.BookService;
 import com.booktrack.ui.component.BookCard;
 import com.booktrack.ui.component.MyListsDialog;
+import com.booktrack.ui.component.AnalyticsDialog;
 
 import javax.swing.*;
 import java.awt.*;
@@ -36,9 +37,12 @@ public class LandingPage extends JFrame {
         createHeader();
         createSearchSection();
         createBooksSection();
-        loadInitialBooks();
         
+        // Show the UI immediately
         setVisible(true);
+        
+        // Load books asynchronously after UI is shown
+        SwingUtilities.invokeLater(() -> loadInitialBooks());
     }
     
     private void initializeFrame() {
@@ -85,10 +89,14 @@ public class LandingPage extends JFrame {
         JMenuItem myListsItem = new JMenuItem("My Lists");
         myListsItem.addActionListener(e -> showMyLists());
         
+        JMenuItem analyticsItem = new JMenuItem("Analytics");
+        analyticsItem.addActionListener(e -> showAnalytics());
+        
         JMenuItem browseItem = new JMenuItem("Browse Books");
         browseItem.addActionListener(e -> browseBooks());
         
         booksMenu.add(myListsItem);
+        booksMenu.add(analyticsItem);
         booksMenu.add(browseItem);
         
         // Help Menu
@@ -564,6 +572,11 @@ public class LandingPage extends JFrame {
     private void showMyLists() {
         MyListsDialog myListsDialog = new MyListsDialog(this);
         myListsDialog.setVisible(true);
+    }
+    
+    private void showAnalytics() {
+        AnalyticsDialog analyticsDialog = new AnalyticsDialog(this);
+        analyticsDialog.setVisible(true);
     }
     
     private void browseBooks() {

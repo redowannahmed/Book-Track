@@ -338,6 +338,15 @@ public class GoogleBooksService {
                 }
             }
             
+            // Extract categories
+            String categoriesSection = extractJsonSection(bookJson, "categories");
+            if (categoriesSection != null) {
+                String[] categories = extractArrayValues(categoriesSection);
+                if (categories != null && categories.length > 0) {
+                    book.setCategories(categories);
+                }
+            }
+            
             return book;
             
         } catch (Exception e) {
@@ -381,6 +390,21 @@ public class GoogleBooksService {
             return matcher.group(1);
         }
         return null;
+    }
+    
+    /**
+     * Extract all values from a JSON array
+     */
+    private String[] extractArrayValues(String arrayJson) {
+        Pattern pattern = Pattern.compile("\"([^\"]+)\"");
+        Matcher matcher = pattern.matcher(arrayJson);
+        java.util.List<String> values = new java.util.ArrayList<>();
+        
+        while (matcher.find()) {
+            values.add(matcher.group(1));
+        }
+        
+        return values.isEmpty() ? null : values.toArray(new String[0]);
     }
     
     /**
