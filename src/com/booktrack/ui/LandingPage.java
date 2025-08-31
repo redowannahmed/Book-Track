@@ -153,13 +153,13 @@ public class LandingPage extends JFrame {
         welcomePanel.add(subtitleLabel, BorderLayout.CENTER);
         
         // Right side - User info card
-        JPanel userCardPanel = new JPanel(new BorderLayout(10, 5));
+    JPanel userCardPanel = new JPanel(new BorderLayout(10, 5));
         userCardPanel.setBackground(new Color(255, 255, 255, 30));
         userCardPanel.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(new Color(255, 255, 255, 50), 1),
-            BorderFactory.createEmptyBorder(15, 20, 15, 20)
+            BorderFactory.createEmptyBorder(10, 20, 10, 20)
         ));
-        userCardPanel.setPreferredSize(new Dimension(250, 0));
+    // Don't lock a fixed width here; we'll size dynamically below so long emails aren't clipped
         
         JLabel userIcon = new JLabel("👤");
         userIcon.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 24));
@@ -168,19 +168,36 @@ public class LandingPage extends JFrame {
         JPanel userInfoPanel = new JPanel(new BorderLayout(0, 3));
         userInfoPanel.setOpaque(false);
         
-        JLabel userNameLabel = new JLabel(currentUser.getFullName());
+    JLabel userNameLabel = new JLabel(currentUser.getFullName());
         userNameLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 14));
         userNameLabel.setForeground(Color.WHITE);
         
-        JLabel userEmailLabel = new JLabel(currentUser.getEmail());
+    JLabel userEmailLabel = new JLabel(currentUser.getEmail());
         userEmailLabel.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
         userEmailLabel.setForeground(new Color(189, 195, 199));
+    // Show full email on hover in case it still overflows in smaller windows
+    userEmailLabel.setToolTipText(currentUser.getEmail());
         
         userInfoPanel.add(userNameLabel, BorderLayout.NORTH);
         userInfoPanel.add(userEmailLabel, BorderLayout.CENTER);
         
         userCardPanel.add(userIcon, BorderLayout.WEST);
         userCardPanel.add(userInfoPanel, BorderLayout.CENTER);
+
+        // Dynamically size the user card width so text doesn't get cut off
+        // Calculate required width based on the label contents and paddings
+        FontMetrics nameFm = userNameLabel.getFontMetrics(userNameLabel.getFont());
+        FontMetrics emailFm = userEmailLabel.getFontMetrics(userEmailLabel.getFont());
+        int textWidth = Math.max(
+            nameFm.stringWidth(userNameLabel.getText()),
+            emailFm.stringWidth(userEmailLabel.getText())
+        );
+        int iconWidth = userIcon.getPreferredSize().width; // emoji label width
+        int hGap = 10; // BorderLayout hgap between icon and text
+        int sidePadding = 40; // Empty border: 20 left + 20 right
+        int minWidth = 250; // keep a sensible minimum
+        int computedWidth = iconWidth + hGap + textWidth + sidePadding;
+        userCardPanel.setPreferredSize(new Dimension(Math.max(minWidth, computedWidth), 0));
         
         headerPanel.add(welcomePanel, BorderLayout.CENTER);
         headerPanel.add(userCardPanel, BorderLayout.EAST);
