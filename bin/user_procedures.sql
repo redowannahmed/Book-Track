@@ -216,3 +216,122 @@ EXCEPTION
 END sp_check_username_availability;
 
 /
+
+-- ================================================
+-- Procedure: SP_UPDATE_USER_PROFILE
+-- Updates first/last name, email, and bio for a user
+-- Matches the parameter order used in UserDAO.updateUserProfile
+-- ================================================
+CREATE OR REPLACE PROCEDURE sp_update_user_profile(
+    p_user_id     IN NUMBER,
+    p_first_name  IN VARCHAR2,
+    p_last_name   IN VARCHAR2,
+    p_email       IN VARCHAR2,
+    p_bio         IN CLOB,
+    p_result      OUT NUMBER,
+    p_message     OUT VARCHAR2
+) AS
+    v_exists NUMBER;
+BEGIN
+    -- Ensure user exists
+    SELECT COUNT(*) INTO v_exists FROM users WHERE user_id = p_user_id;
+    IF v_exists = 0 THEN
+        p_result := 0;
+        p_message := 'User not found';
+        RETURN;
+    END IF;
+
+    -- Ensure email is unique across other users
+    SELECT COUNT(*) INTO v_exists 
+    FROM users 
+    WHERE UPPER(email) = UPPER(p_email) AND user_id <> p_user_id;
+    IF v_exists > 0 THEN
+        p_result := 0;
+        p_message := 'Email already exists';
+        RETURN;
+    END IF;
+
+    -- Perform update
+    UPDATE users
+       SET first_name = p_first_name,
+           last_name  = p_last_name,
+           email      = p_email,
+           bio        = p_bio
+     WHERE user_id    = p_user_id;
+
+    p_result := 1;
+    p_message := 'Profile updated successfully';
+    COMMIT;
+
+EXCEPTION
+    WHEN OTHERS THEN
+        ROLLBACK;
+        p_result := 0;
+        p_message := 'Profile update failed: ' || SQLERRM;
+END sp_update_user_profile;
+
+/
+
+-- ================================================
+-- Function: FN_GET_USER_DETAILS
+-- Returns a SYS_REFCURSOR with a single user's details
+-- Matches UserDAO.getUserById expectation
+-- ================================================
+CREATE OR REPLACE FUNCTION fn_get_user_details(
+    p_user_id IN NUMBER
+)
+RETURN SYS_REFCURSOR AS
+    rc SYS_REFCURSOR;
+BEGIN
+    OPEN rc FOR
+        SELECT 
+            user_id, username, email, first_name, last_name, bio,
+            date_joined, last_login, is_active, total_books_read, total_reviews
+        FROM users
+        WHERE user_id = p_user_id;
+    RETURN rc;
+END fn_get_user_details;
+
+/
+
+-- ================================================
+-- Procedure: SP_CHANGE_PASSWORD
+-- Expects already-hashed passwords (service hashes before calling DAO)
+-- ================================================
+CREATE OR REPLACE PROCEDURE sp_change_password(
+    p_user_id        IN NUMBER,
+    p_old_password   IN VARCHAR2,
+    p_new_password   IN VARCHAR2,
+    p_result         OUT NUMBER,
+    p_message        OUT VARCHAR2
+) AS
+    v_current_hash VARCHAR2(255);
+BEGIN
+    -- Get current stored password hash
+    SELECT password_hash INTO v_current_hash FROM users WHERE user_id = p_user_id;
+
+    -- Verify old password hash matches
+    IF v_current_hash != p_old_password THEN
+        p_result := 0;
+        p_message := 'Current password is incorrect';
+        RETURN;
+    END IF;
+
+    -- Update to new hash
+    UPDATE users SET password_hash = p_new_password WHERE user_id = p_user_id;
+
+    p_result := 1;
+    p_message := 'Password changed successfully';
+    COMMIT;
+
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        p_result := 0;
+        p_message := 'User not found';
+    WHEN OTHERS THEN
+        ROLLBACK;
+        p_result := 0;
+        p_message := 'Password change failed: ' || SQLERRM;
+END sp_change_password;
+
+/

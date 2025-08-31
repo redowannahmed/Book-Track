@@ -6,6 +6,7 @@ import com.booktrack.service.BookService;
 import com.booktrack.ui.component.BookCard;
 import com.booktrack.ui.component.MyListsDialog;
 import com.booktrack.ui.component.AnalyticsDialog;
+import com.booktrack.ui.component.EditProfileDialog;
 
 import javax.swing.*;
 import java.awt.*;
@@ -27,6 +28,10 @@ public class LandingPage extends JFrame {
     private JButton searchButton;
     private JLabel statusLabel;
     private JScrollPane scrollPane;
+    // Header references for live updates
+    private JPanel userCardPanel;
+    private JLabel userNameLabel;
+    private JLabel userEmailLabel;
     
     public LandingPage(User user) {
         this.currentUser = user;
@@ -70,13 +75,13 @@ public class LandingPage extends JFrame {
         JMenu fileMenu = new JMenu("File");
         
         JMenuItem profileItem = new JMenuItem("Profile");
-        profileItem.addActionListener(e -> showProfile());
+    profileItem.addActionListener(e -> { showProfile(); e.getWhen(); });
         
         JMenuItem logoutItem = new JMenuItem("Logout");
-        logoutItem.addActionListener(e -> logout());
+    logoutItem.addActionListener(e -> { logout(); e.getWhen(); });
         
         JMenuItem exitItem = new JMenuItem("Exit");
-        exitItem.addActionListener(e -> System.exit(0));
+    exitItem.addActionListener(e -> { System.exit(0); e.getWhen(); });
         
         fileMenu.add(profileItem);
         fileMenu.addSeparator();
@@ -87,13 +92,13 @@ public class LandingPage extends JFrame {
         JMenu booksMenu = new JMenu("Books");
         
         JMenuItem myListsItem = new JMenuItem("My Lists");
-        myListsItem.addActionListener(e -> showMyLists());
+    myListsItem.addActionListener(e -> { showMyLists(); e.getWhen(); });
         
         JMenuItem analyticsItem = new JMenuItem("Analytics");
-        analyticsItem.addActionListener(e -> showAnalytics());
+    analyticsItem.addActionListener(e -> { showAnalytics(); e.getWhen(); });
         
         JMenuItem browseItem = new JMenuItem("Browse Books");
-        browseItem.addActionListener(e -> browseBooks());
+    browseItem.addActionListener(e -> { browseBooks(); e.getWhen(); });
         
         booksMenu.add(myListsItem);
         booksMenu.add(analyticsItem);
@@ -103,7 +108,7 @@ public class LandingPage extends JFrame {
         JMenu helpMenu = new JMenu("Help");
         
         JMenuItem aboutItem = new JMenuItem("About");
-        aboutItem.addActionListener(e -> showAbout());
+    aboutItem.addActionListener(e -> { showAbout(); e.getWhen(); });
         
         helpMenu.add(aboutItem);
         
@@ -134,7 +139,7 @@ public class LandingPage extends JFrame {
             }
         };
         headerPanel.setLayout(new BorderLayout(20, 20));
-        headerPanel.setBorder(BorderFactory.createEmptyBorder(30, 40, 30, 40));
+    headerPanel.setBorder(BorderFactory.createEmptyBorder(20, 40, 20, 40));
         headerPanel.setPreferredSize(new Dimension(0, 120));
         
         // Left side - Welcome text
@@ -153,7 +158,7 @@ public class LandingPage extends JFrame {
         welcomePanel.add(subtitleLabel, BorderLayout.CENTER);
         
         // Right side - User info card
-    JPanel userCardPanel = new JPanel(new BorderLayout(10, 5));
+    userCardPanel = new JPanel(new BorderLayout(10, 5));
         userCardPanel.setBackground(new Color(255, 255, 255, 30));
         userCardPanel.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(new Color(255, 255, 255, 50), 1),
@@ -168,11 +173,11 @@ public class LandingPage extends JFrame {
         JPanel userInfoPanel = new JPanel(new BorderLayout(0, 3));
         userInfoPanel.setOpaque(false);
         
-    JLabel userNameLabel = new JLabel(currentUser.getFullName());
+    userNameLabel = new JLabel(currentUser.getFullName());
         userNameLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 14));
         userNameLabel.setForeground(Color.WHITE);
         
-    JLabel userEmailLabel = new JLabel(currentUser.getEmail());
+    userEmailLabel = new JLabel(currentUser.getEmail());
         userEmailLabel.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
         userEmailLabel.setForeground(new Color(189, 195, 199));
     // Show full email on hover in case it still overflows in smaller windows
@@ -183,6 +188,20 @@ public class LandingPage extends JFrame {
         
         userCardPanel.add(userIcon, BorderLayout.WEST);
         userCardPanel.add(userInfoPanel, BorderLayout.CENTER);
+
+        // Make the card clickable to edit profile
+        userCardPanel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        String tooltip = "View / Edit profile";
+        userCardPanel.setToolTipText(tooltip);
+        userInfoPanel.setToolTipText(tooltip);
+        userNameLabel.setToolTipText(tooltip);
+        userEmailLabel.setToolTipText(currentUser.getEmail());
+        userCardPanel.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override public void mouseClicked(java.awt.event.MouseEvent e) { openEditProfile(); }
+        });
+        userInfoPanel.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override public void mouseClicked(java.awt.event.MouseEvent e) { openEditProfile(); }
+        });
 
         // Dynamically size the user card width so text doesn't get cut off
         // Calculate required width based on the label contents and paddings
@@ -203,6 +222,43 @@ public class LandingPage extends JFrame {
         headerPanel.add(userCardPanel, BorderLayout.EAST);
         
         add(headerPanel, BorderLayout.NORTH);
+    }
+
+    private void openEditProfile() {
+        Runnable afterSave = () -> {
+            // Update current user object with new values shown in dialog (Session may have refreshed too)
+            // Re-read from labels via existing currentUser reference if session changed
+            // For simplicity, fetch name/email from session if available
+            try {
+                com.booktrack.session.SessionManager sm = com.booktrack.session.SessionManager.getInstance();
+                if (sm.getCurrentUser() != null && sm.getCurrentUser().getUserId().equals(currentUser.getUserId())) {
+                    currentUser.setFirstName(sm.getCurrentUser().getFirstName());
+                    currentUser.setLastName(sm.getCurrentUser().getLastName());
+                    currentUser.setEmail(sm.getCurrentUser().getEmail());
+                }
+            } catch (Exception ignored) {}
+            updateHeaderUserInfo();
+        };
+        new EditProfileDialog(this, currentUser, afterSave);
+    }
+
+    private void updateHeaderUserInfo() {
+        // Update labels
+        userNameLabel.setText(currentUser.getFullName());
+        userEmailLabel.setText(currentUser.getEmail());
+        userEmailLabel.setToolTipText(currentUser.getEmail());
+        // Recompute card width to avoid clipping
+        FontMetrics nameFm = userNameLabel.getFontMetrics(userNameLabel.getFont());
+        FontMetrics emailFm = userEmailLabel.getFontMetrics(userEmailLabel.getFont());
+        int textWidth = Math.max(nameFm.stringWidth(userNameLabel.getText()), emailFm.stringWidth(userEmailLabel.getText()));
+        int iconWidth = 28; // approx width of the emoji/icon
+        int hGap = 10;
+        int sidePadding = 40;
+        int minWidth = 250;
+        int computedWidth = iconWidth + hGap + textWidth + sidePadding;
+        userCardPanel.setPreferredSize(new Dimension(Math.max(minWidth, computedWidth), 0));
+        userCardPanel.revalidate();
+        userCardPanel.repaint();
     }
     
     private void createSearchSection() {
@@ -242,7 +298,7 @@ public class LandingPage extends JFrame {
         searchButton.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
         searchButton.setFocusPainted(false);
         searchButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        searchButton.addActionListener(evt -> performSearch());
+    searchButton.addActionListener(evt -> { performSearch(); evt.getActionCommand(); });
         
         // Hover effect for search button
         searchButton.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -258,7 +314,7 @@ public class LandingPage extends JFrame {
         });
         
         // Enter key support for search
-        searchField.addActionListener(evt -> performSearch());
+    searchField.addActionListener(evt -> { performSearch(); evt.getActionCommand(); });
         
         searchInputSection.add(searchField, BorderLayout.CENTER);
         searchInputSection.add(searchButton, BorderLayout.EAST);
@@ -283,7 +339,7 @@ public class LandingPage extends JFrame {
             quickBtn.setBorder(BorderFactory.createEmptyBorder(8, 15, 8, 15));
             quickBtn.setFocusPainted(false);
             quickBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-            quickBtn.addActionListener(evt -> quickSearch(category));
+            quickBtn.addActionListener(evt -> { quickSearch(category); evt.getActionCommand(); });
             
             // Hover effect for quick buttons
             quickBtn.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -580,10 +636,7 @@ public class LandingPage extends JFrame {
     
     // Menu action handlers
     private void showProfile() {
-        JOptionPane.showMessageDialog(this, 
-            "Profile page coming soon!\n\nUser: " + currentUser.getFullName() + 
-            "\nEmail: " + currentUser.getEmail(),
-            "Profile", JOptionPane.INFORMATION_MESSAGE);
+        openEditProfile();
     }
     
     private void showMyLists() {
