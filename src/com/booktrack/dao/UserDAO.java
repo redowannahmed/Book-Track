@@ -415,4 +415,212 @@ public class UserDAO {
         
         return lists;
     }
+    
+    /**
+     * Create a new custom list for a user
+     * @param userId User ID
+     * @param listName Name of the list
+     * @param listDescription Description of the list
+     * @param isPublic Whether the list is public (1) or private (0)
+     * @return Array containing [result, message, list_id]
+     */
+    public String[] createCustomList(Integer userId, String listName, String listDescription, Integer isPublic) {
+        String sql = "{ call sp_create_custom_list(?, ?, ?, ?, ?, ?, ?) }";
+        
+        try (Connection conn = dbConfig.getConnection();
+             CallableStatement stmt = conn.prepareCall(sql)) {
+            
+            stmt.setInt(1, userId);
+            stmt.setString(2, listName);
+            
+            // Handle CLOB for description
+            if (listDescription != null && !listDescription.trim().isEmpty()) {
+                Clob clobDesc = conn.createClob();
+                clobDesc.setString(1, listDescription);
+                stmt.setClob(3, clobDesc);
+            } else {
+                stmt.setNull(3, Types.CLOB);
+            }
+            
+            stmt.setInt(4, isPublic != null ? isPublic : 1);
+            
+            // Register output parameters
+            stmt.registerOutParameter(5, Types.INTEGER);  // p_result
+            stmt.registerOutParameter(6, Types.VARCHAR);  // p_message
+            stmt.registerOutParameter(7, Types.INTEGER);  // p_list_id
+            
+            stmt.execute();
+            
+            int result = stmt.getInt(5);
+            String message = stmt.getString(6);
+            Integer listId = stmt.getInt(7);
+            
+            return new String[] {
+                String.valueOf(result),
+                message,
+                listId != null ? String.valueOf(listId) : null
+            };
+            
+        } catch (SQLException e) {
+            System.err.println("Error creating custom list: " + e.getMessage());
+            return new String[] {"0", "Database error: " + e.getMessage(), null};
+        }
+    }
+    
+    /**
+     * Update an existing custom list
+     * @param userId User ID
+     * @param listId List ID to update
+     * @param listName New name for the list
+     * @param listDescription New description for the list
+     * @param isPublic Whether the list should be public
+     * @return Array containing [result, message]
+     */
+    public String[] updateCustomList(Integer userId, Integer listId, String listName, String listDescription, Integer isPublic) {
+        String sql = "{ call sp_update_custom_list(?, ?, ?, ?, ?, ?, ?) }";
+        
+        try (Connection conn = dbConfig.getConnection();
+             CallableStatement stmt = conn.prepareCall(sql)) {
+            
+            stmt.setInt(1, userId);
+            stmt.setInt(2, listId);
+            stmt.setString(3, listName);
+            
+            // Handle CLOB for description
+            if (listDescription != null && !listDescription.trim().isEmpty()) {
+                Clob clobDesc = conn.createClob();
+                clobDesc.setString(1, listDescription);
+                stmt.setClob(4, clobDesc);
+            } else {
+                stmt.setNull(4, Types.CLOB);
+            }
+            
+            stmt.setInt(5, isPublic != null ? isPublic : 1);
+            
+            // Register output parameters
+            stmt.registerOutParameter(6, Types.INTEGER);  // p_result
+            stmt.registerOutParameter(7, Types.VARCHAR);  // p_message
+            
+            stmt.execute();
+            
+            int result = stmt.getInt(6);
+            String message = stmt.getString(7);
+            
+            return new String[] {String.valueOf(result), message};
+            
+        } catch (SQLException e) {
+            System.err.println("Error updating custom list: " + e.getMessage());
+            return new String[] {"0", "Database error: " + e.getMessage()};
+        }
+    }
+    
+    /**
+     * Delete a custom list
+     * @param userId User ID
+     * @param listId List ID to delete
+     * @return Array containing [result, message]
+     */
+    public String[] deleteCustomList(Integer userId, Integer listId) {
+        String sql = "{ call sp_delete_custom_list(?, ?, ?, ?) }";
+        
+        try (Connection conn = dbConfig.getConnection();
+             CallableStatement stmt = conn.prepareCall(sql)) {
+            
+            stmt.setInt(1, userId);
+            stmt.setInt(2, listId);
+            
+            // Register output parameters
+            stmt.registerOutParameter(3, Types.INTEGER);  // p_result
+            stmt.registerOutParameter(4, Types.VARCHAR);  // p_message
+            
+            stmt.execute();
+            
+            int result = stmt.getInt(3);
+            String message = stmt.getString(4);
+            
+            return new String[] {String.valueOf(result), message};
+            
+        } catch (SQLException e) {
+            System.err.println("Error deleting custom list: " + e.getMessage());
+            return new String[] {"0", "Database error: " + e.getMessage()};
+        }
+    }
+    
+    /**
+     * Add a book to a specific custom list
+     * @param userId User ID
+     * @param listId List ID
+     * @param bookId Book ID to add
+     * @param notes Optional notes about the book in this list
+     * @return Array containing [result, message]
+     */
+    public String[] addBookToCustomList(Integer userId, Integer listId, Integer bookId, String notes) {
+        String sql = "{ call sp_add_book_to_custom_list(?, ?, ?, ?, ?, ?) }";
+        
+        try (Connection conn = dbConfig.getConnection();
+             CallableStatement stmt = conn.prepareCall(sql)) {
+            
+            stmt.setInt(1, userId);
+            stmt.setInt(2, listId);
+            stmt.setInt(3, bookId);
+            
+            // Handle CLOB for notes
+            if (notes != null && !notes.trim().isEmpty()) {
+                Clob clobNotes = conn.createClob();
+                clobNotes.setString(1, notes);
+                stmt.setClob(4, clobNotes);
+            } else {
+                stmt.setNull(4, Types.CLOB);
+            }
+            
+            // Register output parameters
+            stmt.registerOutParameter(5, Types.INTEGER);  // p_result
+            stmt.registerOutParameter(6, Types.VARCHAR);  // p_message
+            
+            stmt.execute();
+            
+            int result = stmt.getInt(5);
+            String message = stmt.getString(6);
+            
+            return new String[] {String.valueOf(result), message};
+            
+        } catch (SQLException e) {
+            System.err.println("Error adding book to custom list: " + e.getMessage());
+            return new String[] {"0", "Database error: " + e.getMessage()};
+        }
+    }
+    
+    /**
+     * Remove a book from a specific custom list
+     * @param userId User ID
+     * @param listId List ID
+     * @param bookId Book ID to remove
+     * @return Array containing [result, message]
+     */
+    public String[] removeBookFromCustomList(Integer userId, Integer listId, Integer bookId) {
+        String sql = "{ call sp_remove_book_from_custom_list(?, ?, ?, ?, ?) }";
+        
+        try (Connection conn = dbConfig.getConnection();
+             CallableStatement stmt = conn.prepareCall(sql)) {
+            
+            stmt.setInt(1, userId);
+            stmt.setInt(2, listId);
+            stmt.setInt(3, bookId);
+            
+            // Register output parameters
+            stmt.registerOutParameter(4, Types.INTEGER);  // p_result
+            stmt.registerOutParameter(5, Types.VARCHAR);  // p_message
+            
+            stmt.execute();
+            
+            int result = stmt.getInt(4);
+            String message = stmt.getString(5);
+            
+            return new String[] {String.valueOf(result), message};
+            
+        } catch (SQLException e) {
+            System.err.println("Error removing book from custom list: " + e.getMessage());
+            return new String[] {"0", "Database error: " + e.getMessage()};
+        }
+    }
 }

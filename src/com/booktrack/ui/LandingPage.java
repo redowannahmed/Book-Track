@@ -26,6 +26,7 @@ public class LandingPage extends JFrame {
     private JPanel searchPanel;
     private JTextField searchField;
     private JButton searchButton;
+    private JButton clearSearchButton;
     private JLabel statusLabel;
     private JScrollPane scrollPane;
     // Header references for live updates
@@ -300,6 +301,21 @@ public class LandingPage extends JFrame {
         searchButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
     searchButton.addActionListener(evt -> { performSearch(); evt.getActionCommand(); });
         
+        // Clear search button (initially hidden)
+        clearSearchButton = new JButton("🏠 Popular Books");
+        clearSearchButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 14));
+        clearSearchButton.setPreferredSize(new Dimension(150, 40));
+        clearSearchButton.setBackground(new Color(46, 204, 113));
+        clearSearchButton.setForeground(Color.WHITE);
+        clearSearchButton.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+        clearSearchButton.setFocusPainted(false);
+        clearSearchButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        clearSearchButton.setVisible(false); // Initially hidden
+        clearSearchButton.addActionListener(evt -> { 
+            clearSearchAndShowPopular(); 
+            evt.getActionCommand(); 
+        });
+        
         // Hover effect for search button
         searchButton.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
@@ -313,11 +329,30 @@ public class LandingPage extends JFrame {
             }
         });
         
+        // Hover effect for clear search button
+        clearSearchButton.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseEntered(java.awt.event.MouseEvent e) {
+                clearSearchButton.setBackground(new Color(39, 174, 96));
+            }
+            
+            @Override
+            public void mouseExited(java.awt.event.MouseEvent e) {
+                clearSearchButton.setBackground(new Color(46, 204, 113));
+            }
+        });
+        
         // Enter key support for search
     searchField.addActionListener(evt -> { performSearch(); evt.getActionCommand(); });
         
+        // Button panel to hold both search and clear buttons
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        buttonPanel.setOpaque(false);
+        buttonPanel.add(searchButton);
+        buttonPanel.add(clearSearchButton);
+        
         searchInputSection.add(searchField, BorderLayout.CENTER);
-        searchInputSection.add(searchButton, BorderLayout.EAST);
+        searchInputSection.add(buttonPanel, BorderLayout.EAST);
         
         // Quick search section
         JPanel quickSearchSection = new JPanel(new BorderLayout(0, 10));
@@ -478,6 +513,8 @@ public class LandingPage extends JFrame {
                 try {
                     List<Book> books = get();
                     displayBooks(books, "Popular Books");
+                    // Hide the clear search button when showing popular books
+                    clearSearchButton.setVisible(false);
                 } catch (Exception e) {
                     showError("Failed to load books: " + e.getMessage());
                 }
@@ -525,6 +562,8 @@ public class LandingPage extends JFrame {
                 try {
                     List<Book> books = get();
                     displayBooks(books, "Search Results for \"" + query + "\"");
+                    // Show the clear search button when search results are displayed
+                    clearSearchButton.setVisible(true);
                 } catch (Exception e) {
                     showError("Search failed: " + e.getMessage());
                 }
@@ -677,5 +716,22 @@ public class LandingPage extends JFrame {
                 }
             });
         }
+    }
+    
+    /**
+     * Public method to refresh the landing page books
+     * Can be called from other dialogs to refresh the main page
+     */
+    public void refreshBooks() {
+        loadInitialBooks();
+    }
+    
+    /**
+     * Clear search field and show popular books again
+     */
+    private void clearSearchAndShowPopular() {
+        searchField.setText("");
+        clearSearchButton.setVisible(false);
+        loadInitialBooks();
     }
 }

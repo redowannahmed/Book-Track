@@ -43,107 +43,209 @@ public class LoginForm extends JFrame {
     }
     
     private void initializeComponents() {
-        // Create components
-        usernameField = new JTextField(20);
-        passwordField = new JPasswordField(20);
+        // Create components with larger sizes
+        usernameField = new JTextField(25);
+        passwordField = new JPasswordField(25);
         loginButton = new JButton("Login");
-        registerButton = new JButton("Register");
+        registerButton = new JButton("Create Account");
         statusLabel = new JLabel(" ");
         showPasswordCheckBox = new JCheckBox("Show Password");
         
-        // Set component properties
+        // Style text fields
+        usernameField.setPreferredSize(new Dimension(320, 45));
+        usernameField.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 14));
+        usernameField.setBackground(new Color(248, 249, 250));
+        usernameField.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(189, 195, 199), 1),
+            BorderFactory.createEmptyBorder(12, 15, 12, 15)
+        ));
         usernameField.setToolTipText("Enter your username");
+        
+        passwordField.setPreferredSize(new Dimension(320, 45));
+        passwordField.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 14));
+        passwordField.setBackground(new Color(248, 249, 250));
+        passwordField.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(189, 195, 199), 1),
+            BorderFactory.createEmptyBorder(12, 15, 12, 15)
+        ));
         passwordField.setToolTipText("Enter your password");
+        
+        // Style buttons
+        loginButton.setPreferredSize(new Dimension(150, 45));
+        loginButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 14));
+        loginButton.setBackground(new Color(52, 73, 94));
+        loginButton.setForeground(Color.WHITE);
+        loginButton.setBorder(BorderFactory.createEmptyBorder(12, 20, 12, 20));
+        loginButton.setFocusPainted(false);
+        loginButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        
+        registerButton.setPreferredSize(new Dimension(150, 45));
+        registerButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 14));
+        registerButton.setBackground(new Color(46, 204, 113));
+        registerButton.setForeground(Color.WHITE);
+        registerButton.setBorder(BorderFactory.createEmptyBorder(12, 20, 12, 20));
+        registerButton.setFocusPainted(false);
+        registerButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        
+        // Style checkbox
+        showPasswordCheckBox.setBackground(new Color(245, 247, 250));
+        showPasswordCheckBox.setForeground(new Color(52, 73, 94));
+        showPasswordCheckBox.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
         
         // Set status label properties
         statusLabel.setForeground(Color.RED);
         statusLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        statusLabel.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
         
-        // Set button properties
-        loginButton.setPreferredSize(new Dimension(100, 30));
-        registerButton.setPreferredSize(new Dimension(100, 30));
+        // Add hover effects
+        addButtonHoverEffect(loginButton, new Color(52, 73, 94), new Color(44, 62, 80));
+        addButtonHoverEffect(registerButton, new Color(46, 204, 113), new Color(39, 174, 96));
         
         // Make login button default
         getRootPane().setDefaultButton(loginButton);
     }
     
+    private void addButtonHoverEffect(JButton button, Color normalColor, Color hoverColor) {
+        button.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseEntered(java.awt.event.MouseEvent e) {
+                button.setBackground(hoverColor);
+            }
+            
+            @Override
+            public void mouseExited(java.awt.event.MouseEvent e) {
+                button.setBackground(normalColor);
+            }
+        });
+    }
+    
     private void setupLayout() {
         setLayout(new BorderLayout());
+        getContentPane().setBackground(new Color(245, 247, 250));
         
-        // Create main panel
-        JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
-        mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        // Create main panel with better spacing
+        JPanel mainPanel = new JPanel(new BorderLayout(0, 20));
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(30, 40, 30, 40));
+        mainPanel.setBackground(new Color(245, 247, 250));
         
-        // Title panel
-        JPanel titlePanel = new JPanel();
-        JLabel titleLabel = new JLabel("BookTrack");
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
-        titleLabel.setForeground(new Color(41, 128, 185));
-        titlePanel.add(titleLabel);
+        // Header panel with gradient background
+        JPanel headerPanel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2d = (Graphics2D) g;
+                g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+                GradientPaint gp = new GradientPaint(
+                    0, 0, new Color(52, 73, 94),
+                    0, getHeight(), new Color(44, 62, 80)
+                );
+                g2d.setPaint(gp);
+                g2d.fillRect(0, 0, getWidth(), getHeight());
+            }
+        };
+        headerPanel.setLayout(new BoxLayout(headerPanel, BoxLayout.Y_AXIS));
+        headerPanel.setBorder(BorderFactory.createEmptyBorder(30, 30, 30, 30));
+        headerPanel.setPreferredSize(new Dimension(0, 120));
+        
+        // Title and subtitle
+        JLabel titleLabel = new JLabel("📚 BookTrack");
+        titleLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 32));
+        titleLabel.setForeground(Color.WHITE);
+        titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         
         JLabel subtitleLabel = new JLabel("Track Your Reading Journey");
-        subtitleLabel.setFont(new Font("Arial", Font.ITALIC, 12));
-        subtitleLabel.setForeground(Color.GRAY);
+        subtitleLabel.setFont(new Font(Font.SANS_SERIF, Font.ITALIC, 16));
+        subtitleLabel.setForeground(new Color(189, 195, 199));
+        subtitleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         
-        JPanel titleContainer = new JPanel(new BorderLayout());
-        titleContainer.add(titlePanel, BorderLayout.CENTER);
-        titleContainer.add(subtitleLabel, BorderLayout.SOUTH);
-        subtitleLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        headerPanel.add(Box.createVerticalGlue());
+        headerPanel.add(titleLabel);
+        headerPanel.add(Box.createVerticalStrut(10));
+        headerPanel.add(subtitleLabel);
+        headerPanel.add(Box.createVerticalGlue());
         
         // Form panel
-        JPanel formPanel = new JPanel(new GridBagLayout());
-        formPanel.setBorder(BorderFactory.createTitledBorder("Login to Your Account"));
+        JPanel formPanel = new JPanel();
+        formPanel.setLayout(new BoxLayout(formPanel, BoxLayout.Y_AXIS));
+        formPanel.setBackground(Color.WHITE);
+        formPanel.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(189, 195, 199), 1),
+            BorderFactory.createEmptyBorder(30, 30, 30, 30)
+        ));
         
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(5, 5, 5, 5);
+        // Welcome text
+        JLabel welcomeLabel = new JLabel("Welcome Back!");
+        welcomeLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 20));
+        welcomeLabel.setForeground(new Color(52, 73, 94));
+        welcomeLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        
+        JLabel instructionLabel = new JLabel("Please sign in to your account");
+        instructionLabel.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 14));
+        instructionLabel.setForeground(new Color(108, 117, 125));
+        instructionLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        
+        formPanel.add(welcomeLabel);
+        formPanel.add(Box.createVerticalStrut(5));
+        formPanel.add(instructionLabel);
+        formPanel.add(Box.createVerticalStrut(25));
         
         // Username field
-        gbc.gridx = 0; gbc.gridy = 0;
-        gbc.anchor = GridBagConstraints.EAST;
-        formPanel.add(new JLabel("Username:"), gbc);
+        JLabel usernameLabel = new JLabel("Username");
+        usernameLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 13));
+        usernameLabel.setForeground(new Color(52, 73, 94));
+        usernameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         
-        gbc.gridx = 1; gbc.gridy = 0;
-        gbc.anchor = GridBagConstraints.WEST;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        formPanel.add(usernameField, gbc);
+        usernameField.setAlignmentX(Component.CENTER_ALIGNMENT);
+        usernameField.setMaximumSize(usernameField.getPreferredSize());
+        
+        formPanel.add(usernameLabel);
+        formPanel.add(Box.createVerticalStrut(8));
+        formPanel.add(usernameField);
+        formPanel.add(Box.createVerticalStrut(15));
         
         // Password field
-        gbc.gridx = 0; gbc.gridy = 1;
-        gbc.anchor = GridBagConstraints.EAST;
-        gbc.fill = GridBagConstraints.NONE;
-        formPanel.add(new JLabel("Password:"), gbc);
+        JLabel passwordLabel = new JLabel("Password");
+        passwordLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 13));
+        passwordLabel.setForeground(new Color(52, 73, 94));
+        passwordLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         
-        gbc.gridx = 1; gbc.gridy = 1;
-        gbc.anchor = GridBagConstraints.WEST;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        formPanel.add(passwordField, gbc);
+        passwordField.setAlignmentX(Component.CENTER_ALIGNMENT);
+        passwordField.setMaximumSize(passwordField.getPreferredSize());
+        
+        formPanel.add(passwordLabel);
+        formPanel.add(Box.createVerticalStrut(8));
+        formPanel.add(passwordField);
+        formPanel.add(Box.createVerticalStrut(10));
         
         // Show password checkbox
-        gbc.gridx = 1; gbc.gridy = 2;
-        gbc.anchor = GridBagConstraints.WEST;
-        gbc.fill = GridBagConstraints.NONE;
-        formPanel.add(showPasswordCheckBox, gbc);
+        showPasswordCheckBox.setAlignmentX(Component.CENTER_ALIGNMENT);
+        formPanel.add(showPasswordCheckBox);
+        formPanel.add(Box.createVerticalStrut(25));
         
         // Button panel
-        JPanel buttonPanel = new JPanel(new FlowLayout());
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 0));
+        buttonPanel.setBackground(Color.WHITE);
         buttonPanel.add(loginButton);
         buttonPanel.add(registerButton);
         
+        formPanel.add(buttonPanel);
+        formPanel.add(Box.createVerticalStrut(15));
+        
         // Status panel
         JPanel statusPanel = new JPanel();
+        statusPanel.setBackground(Color.WHITE);
         statusPanel.add(statusLabel);
+        formPanel.add(statusPanel);
         
         // Add to main panel
-        mainPanel.add(titleContainer, BorderLayout.NORTH);
+        mainPanel.add(headerPanel, BorderLayout.NORTH);
         mainPanel.add(formPanel, BorderLayout.CENTER);
         
-        JPanel bottomPanel = new JPanel(new BorderLayout());
-        bottomPanel.add(buttonPanel, BorderLayout.CENTER);
-        bottomPanel.add(statusPanel, BorderLayout.SOUTH);
-        
-        mainPanel.add(bottomPanel, BorderLayout.SOUTH);
-        
         add(mainPanel);
+        
+        // Set window size - increased height to ensure all components are visible
+        setPreferredSize(new Dimension(500, 750));
+        pack();
     }
     
     private void setupEventListeners() {

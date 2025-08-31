@@ -4,6 +4,7 @@ package com.booktrack.model;
  * Book model class representing book data from Google Books API
  */
 public class Book {
+    private Integer bookId;  // Database book ID
     private String googleBooksId;
     private String title;
     private String subtitle;
@@ -79,6 +80,9 @@ public class Book {
     }
     
     // Getters and Setters
+    public Integer getBookId() { return bookId; }
+    public void setBookId(Integer bookId) { this.bookId = bookId; }
+    
     public String getGoogleBooksId() { return googleBooksId; }
     public void setGoogleBooksId(String googleBooksId) { this.googleBooksId = googleBooksId; }
     

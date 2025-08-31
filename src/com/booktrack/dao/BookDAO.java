@@ -1020,4 +1020,89 @@ public class BookDAO {
             return false;
         }
     }
+    
+    /**
+     * Search books for adding to custom lists
+     * @param searchTerm Search term for books
+     * @param limit Maximum number of results
+     * @return List of books matching the search term
+     */
+    public List<Book> searchBooksForList(String searchTerm, Integer limit) {
+        String sql = "{ ? = call fn_search_books_for_list(?, ?) }";
+        List<Book> books = new ArrayList<>();
+        
+        try (Connection conn = dbConfig.getConnection();
+             CallableStatement stmt = conn.prepareCall(sql)) {
+            
+            stmt.registerOutParameter(1, Types.REF_CURSOR);
+            stmt.setString(2, searchTerm);
+            stmt.setInt(3, limit != null ? limit : 20);
+            
+            stmt.execute();
+            
+            try (ResultSet rs = (ResultSet) stmt.getObject(1)) {
+                while (rs.next()) {
+                    Book book = new Book();
+                    book.setBookId(rs.getInt("book_id"));
+                    book.setGoogleBooksId(rs.getString("google_books_id"));
+                    book.setTitle(rs.getString("title"));
+                    book.setSubtitle(rs.getString("subtitle"));
+                    book.setDescription(rs.getString("description"));
+                    book.setPublisher(rs.getString("publisher"));
+                    
+                    Date publishedDate = rs.getDate("published_date");
+                    if (publishedDate != null) {
+                        book.setPublishedDate(publishedDate.toString());
+                    }
+                    
+                    book.setThumbnailUrl(rs.getString("cover_image_url"));
+                    book.setAverageRating(rs.getDouble("average_rating"));
+                    book.setRatingsCount(rs.getInt("ratings_count"));
+                    
+                    // Convert authors string to array
+                    String authorsStr = rs.getString("authors");
+                    if (authorsStr != null && !authorsStr.trim().isEmpty()) {
+                        book.setAuthors(authorsStr.split(", "));
+                    } else {
+                        book.setAuthors(new String[0]);
+                    }
+                    
+                    books.add(book);
+                }
+            }
+            
+        } catch (SQLException e) {
+            System.err.println("Error searching books for list: " + e.getMessage());
+            lastMessage = "Error searching books: " + e.getMessage();
+        }
+        
+        return books;
+    }
+    
+    /**
+     * Check if a book exists in a specific custom list
+     * @param listId List ID
+     * @param bookId Book ID
+     * @return true if book exists in the list, false otherwise
+     */
+    public boolean isBookInCustomList(Integer listId, Integer bookId) {
+        String sql = "{ ? = call fn_is_book_in_custom_list(?, ?) }";
+        
+        try (Connection conn = dbConfig.getConnection();
+             CallableStatement stmt = conn.prepareCall(sql)) {
+            
+            stmt.registerOutParameter(1, Types.INTEGER);
+            stmt.setInt(2, listId);
+            stmt.setInt(3, bookId);
+            
+            stmt.execute();
+            
+            int count = stmt.getInt(1);
+            return count > 0;
+            
+        } catch (SQLException e) {
+            System.err.println("Error checking if book is in custom list: " + e.getMessage());
+            return false;
+        }
+    }
 }

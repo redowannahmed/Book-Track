@@ -7,6 +7,8 @@ import com.booktrack.session.SessionManager;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.List;
 
 /**
@@ -26,6 +28,7 @@ public class MyListsDialog extends JDialog {
     private JPanel booksPanel;
     private JScrollPane booksScrollPane;
     private JLabel statusLabel;
+    private JButton addBooksButton; // Add books button for selected list
     
     private List<String[]> userLists; // [list_id, list_name, list_description, list_type, books_count, is_default]
     
@@ -70,6 +73,31 @@ public class MyListsDialog extends JDialog {
         listsList.addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
                 loadBooksForSelectedList();
+            }
+        });
+        
+        // Add right-click context menu for list management
+        listsList.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mousePressed(java.awt.event.MouseEvent e) {
+                if (e.isPopupTrigger()) {
+                    showContextMenu(e);
+                }
+            }
+            
+            @Override
+            public void mouseReleased(java.awt.event.MouseEvent e) {
+                if (e.isPopupTrigger()) {
+                    showContextMenu(e);
+                }
+            }
+            
+            private void showContextMenu(java.awt.event.MouseEvent e) {
+                int index = listsList.locationToIndex(e.getPoint());
+                if (index >= 0 && userLists != null && index < userLists.size()) {
+                    listsList.setSelectedIndex(index);
+                    showListContextMenu(userLists.get(index), e.getX(), e.getY());
+                }
             }
         });
         
@@ -125,7 +153,42 @@ public class MyListsDialog extends JDialog {
         JLabel listsTitle = new JLabel("📋 Your Collections");
         listsTitle.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 16));
         listsTitle.setForeground(new Color(52, 73, 94));
-        leftPanel.add(listsTitle, BorderLayout.NORTH);
+        
+        // Create button panel for list management
+        JPanel listHeaderPanel = new JPanel(new BorderLayout());
+        listHeaderPanel.setOpaque(false);
+        listHeaderPanel.add(listsTitle, BorderLayout.WEST);
+        
+        // Add "Create New List" button
+        JButton createListButton = new JButton("+ New List");
+        createListButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 11));
+        createListButton.setBackground(new Color(46, 204, 113));
+        createListButton.setForeground(Color.WHITE);
+        createListButton.setBorder(BorderFactory.createEmptyBorder(6, 12, 6, 12));
+        createListButton.setFocusPainted(false);
+        createListButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        createListButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                MyListsDialog.this.showCreateListDialog();
+            }
+        });
+        
+        // Add hover effect
+        createListButton.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseEntered(java.awt.event.MouseEvent e) {
+                createListButton.setBackground(new Color(39, 174, 96));
+            }
+            
+            @Override
+            public void mouseExited(java.awt.event.MouseEvent e) {
+                createListButton.setBackground(new Color(46, 204, 113));
+            }
+        });
+        
+        listHeaderPanel.add(createListButton, BorderLayout.EAST);
+        leftPanel.add(listHeaderPanel, BorderLayout.NORTH);
         
         // Style the lists
         listsList.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 13));
@@ -162,10 +225,50 @@ public class MyListsDialog extends JDialog {
         JPanel rightPanel = new JPanel(new BorderLayout(0, 10));
         rightPanel.setBackground(new Color(245, 247, 250));
         
+        // Books header with add button
+        JPanel booksHeaderPanel = new JPanel(new BorderLayout());
+        booksHeaderPanel.setOpaque(false);
+        
         JLabel booksTitle = new JLabel("📖 Books in Collection");
         booksTitle.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 16));
         booksTitle.setForeground(new Color(52, 73, 94));
-        rightPanel.add(booksTitle, BorderLayout.NORTH);
+        booksHeaderPanel.add(booksTitle, BorderLayout.WEST);
+        
+        // Add "Add Books" button (initially hidden)
+        addBooksButton = new JButton("+ Add Books");
+        addBooksButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 11));
+        addBooksButton.setBackground(new Color(52, 152, 219));
+        addBooksButton.setForeground(Color.WHITE);
+        addBooksButton.setBorder(BorderFactory.createEmptyBorder(6, 12, 6, 12));
+        addBooksButton.setFocusPainted(false);
+        addBooksButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        addBooksButton.setVisible(false); // Initially hidden
+        addBooksButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                int selectedIndex = listsList.getSelectedIndex();
+                if (selectedIndex >= 0 && userLists != null && selectedIndex < userLists.size()) {
+                    String[] selectedListData = userLists.get(selectedIndex);
+                    showAddBooksDialog(selectedListData[0], selectedListData[1]);
+                }
+            }
+        });
+        
+        // Add hover effect
+        addBooksButton.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseEntered(java.awt.event.MouseEvent e) {
+                addBooksButton.setBackground(new Color(41, 128, 185));
+            }
+            
+            @Override
+            public void mouseExited(java.awt.event.MouseEvent e) {
+                addBooksButton.setBackground(new Color(52, 152, 219));
+            }
+        });
+        
+        booksHeaderPanel.add(addBooksButton, BorderLayout.EAST);
+        rightPanel.add(booksHeaderPanel, BorderLayout.NORTH);
         
         // Status label with modern styling
         statusLabel.setFont(new Font(Font.SANS_SERIF, Font.ITALIC, 12));
@@ -193,8 +296,42 @@ public class MyListsDialog extends JDialog {
         add(mainPanel, BorderLayout.CENTER);
         
         // Button panel with modern styling
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 25, 15));
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 15));
         buttonPanel.setBackground(new Color(245, 247, 250));
+        
+        // Back to Home button with attractive styling
+        JButton backToHomeButton = new JButton("🏠 Back to Home");
+        backToHomeButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
+        backToHomeButton.setBackground(new Color(52, 152, 219)); // Blue color
+        backToHomeButton.setForeground(Color.WHITE);
+        backToHomeButton.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+        backToHomeButton.setFocusPainted(false);
+        backToHomeButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        backToHomeButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // Close this dialog and refresh the landing page
+                dispose();
+                
+                // Cast parent to LandingPage and refresh
+                if (parent instanceof com.booktrack.ui.LandingPage) {
+                    ((com.booktrack.ui.LandingPage) parent).refreshBooks();
+                }
+            }
+        });
+        
+        // Add hover effect for back to home button
+        backToHomeButton.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseEntered(java.awt.event.MouseEvent e) {
+                backToHomeButton.setBackground(new Color(41, 128, 185)); // Darker blue on hover
+            }
+            
+            @Override
+            public void mouseExited(java.awt.event.MouseEvent e) {
+                backToHomeButton.setBackground(new Color(52, 152, 219)); // Original blue
+            }
+        });
         
         JButton closeButton = new JButton("✕ Close");
         closeButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
@@ -203,8 +340,11 @@ public class MyListsDialog extends JDialog {
         closeButton.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
         closeButton.setFocusPainted(false);
         closeButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        closeButton.addActionListener(evt -> {
-            dispose();
+        closeButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                dispose();
+            }
         });
         
         // Add hover effect
@@ -220,6 +360,7 @@ public class MyListsDialog extends JDialog {
             }
         });
         
+        buttonPanel.add(backToHomeButton);
         buttonPanel.add(closeButton);
         add(buttonPanel, BorderLayout.SOUTH);
     }
@@ -277,12 +418,16 @@ public class MyListsDialog extends JDialog {
     private void loadBooksForSelectedList() {
         int selectedIndex = listsList.getSelectedIndex();
         if (selectedIndex < 0 || userLists == null || selectedIndex >= userLists.size()) {
+            addBooksButton.setVisible(false);
             return;
         }
         
         String[] selectedListData = userLists.get(selectedIndex);
         String listId = selectedListData[0];
         String listName = selectedListData[1];
+        
+        // Show the add books button when a list is selected
+        addBooksButton.setVisible(true);
         
         statusLabel.setText("Loading books from " + listName + "...");
         booksPanel.removeAll();
@@ -491,5 +636,195 @@ public class MyListsDialog extends JDialog {
             return String.format("%.1f/5.0", rating);
         }
         return "Not rated yet";
+    }
+    
+    /**
+     * Show dialog to create a new custom list
+     */
+    private void showCreateListDialog() {
+        CreateCustomListDialog dialog = new CreateCustomListDialog(parent, new Runnable() {
+            @Override
+            public void run() {
+                // Refresh the lists after creating a new one
+                loadUserLists();
+            }
+        });
+        dialog.setVisible(true);
+    }
+    
+    /**
+     * Show dialog to add books to a custom list
+     */
+    private void showAddBooksDialog(String listId, String listName) {
+        AddBooksToListDialog dialog = new AddBooksToListDialog(parent, Integer.parseInt(listId), listName, new Runnable() {
+            @Override
+            public void run() {
+                // Refresh the current list view after adding books
+                loadBooksForSelectedList();
+                // Also refresh the lists to update book counts
+                loadUserLists();
+            }
+        });
+        dialog.setVisible(true);
+    }
+    
+    /**
+     * Show context menu for custom lists (edit, delete, add books)
+     */
+    private void showListContextMenu(String[] listData, int x, int y) {
+        String listId = listData[0];
+        String listName = listData[1];
+        String listType = listData[3];
+        String isDefault = listData[5];
+        
+        JPopupMenu contextMenu = new JPopupMenu();
+        
+        // Add Books option (for all lists)
+        JMenuItem addBooksItem = new JMenuItem("📚 Add Books");
+        addBooksItem.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
+        addBooksItem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                showAddBooksDialog(listId, listName);
+            }
+        });
+        contextMenu.add(addBooksItem);
+        
+        // Only show edit/delete for custom lists (not default ones)
+        if ("0".equals(isDefault) && "CUSTOM".equals(listType)) {
+            contextMenu.addSeparator();
+            
+            // Edit List option
+            JMenuItem editItem = new JMenuItem("✏️ Edit List");
+            editItem.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
+            editItem.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    showEditListDialog(listData);
+                }
+            });
+            contextMenu.add(editItem);
+            
+            // Delete List option
+            JMenuItem deleteItem = new JMenuItem("🗑️ Delete List");
+            deleteItem.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
+            deleteItem.setForeground(new Color(231, 76, 60));
+            deleteItem.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    deleteCustomList(listData);
+                }
+            });
+            contextMenu.add(deleteItem);
+        }
+        
+        contextMenu.show(listsList, x, y);
+    }
+    
+    /**
+     * Show dialog to edit a custom list
+     */
+    private void showEditListDialog(String[] listData) {
+        // For now, just show a simple dialog. You could create a full EditCustomListDialog later
+        String listId = listData[0];
+        String currentName = listData[1];
+        String currentDescription = listData[2];
+        
+        JPanel panel = new JPanel(new GridLayout(3, 2, 5, 5));
+        panel.add(new JLabel("List Name:"));
+        JTextField nameField = new JTextField(currentName);
+        panel.add(nameField);
+        
+        panel.add(new JLabel("Description:"));
+        JTextArea descArea = new JTextArea(currentDescription, 3, 20);
+        descArea.setLineWrap(true);
+        descArea.setWrapStyleWord(true);
+        JScrollPane descScroll = new JScrollPane(descArea);
+        panel.add(descScroll);
+        
+        panel.add(new JLabel("Public:"));
+        JCheckBox publicCheck = new JCheckBox("", true); // Assume public for now
+        panel.add(publicCheck);
+        
+        int result = JOptionPane.showConfirmDialog(this, panel, "Edit List: " + currentName, 
+                                                   JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+        
+        if (result == JOptionPane.OK_OPTION) {
+            String newName = nameField.getText().trim();
+            String newDescription = descArea.getText().trim();
+            int isPublic = publicCheck.isSelected() ? 1 : 0;
+            
+            if (!newName.isEmpty()) {
+                SwingWorker<String[], Void> worker = new SwingWorker<String[], Void>() {
+                    @Override
+                    protected String[] doInBackground() throws Exception {
+                        return userDAO.updateCustomList(userId, Integer.parseInt(listId), newName, newDescription, isPublic);
+                    }
+                    
+                    @Override
+                    protected void done() {
+                        try {
+                            String[] updateResult = get();
+                            if ("1".equals(updateResult[0])) {
+                                JOptionPane.showMessageDialog(MyListsDialog.this, "List updated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                                loadUserLists(); // Refresh the list
+                            } else {
+                                JOptionPane.showMessageDialog(MyListsDialog.this, updateResult[1], "Error", JOptionPane.ERROR_MESSAGE);
+                            }
+                        } catch (Exception e) {
+                            JOptionPane.showMessageDialog(MyListsDialog.this, "Error updating list: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                        }
+                    }
+                };
+                worker.execute();
+            }
+        }
+    }
+    
+    /**
+     * Delete a custom list after confirmation
+     */
+    private void deleteCustomList(String[] listData) {
+        String listId = listData[0];
+        String listName = listData[1];
+        String booksCount = listData[4];
+        
+        String message = "Are you sure you want to delete the list \"" + listName + "\"?";
+        if (Integer.parseInt(booksCount) > 0) {
+            message += "\n\nThis list contains " + booksCount + " book(s). They will be removed from the list but not deleted from the database.";
+        }
+        
+        int confirm = JOptionPane.showConfirmDialog(this, message, "Confirm Delete", 
+                                                   JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+        
+        if (confirm == JOptionPane.YES_OPTION) {
+            SwingWorker<String[], Void> worker = new SwingWorker<String[], Void>() {
+                @Override
+                protected String[] doInBackground() throws Exception {
+                    return userDAO.deleteCustomList(userId, Integer.parseInt(listId));
+                }
+                
+                @Override
+                protected void done() {
+                    try {
+                        String[] deleteResult = get();
+                        if ("1".equals(deleteResult[0])) {
+                            JOptionPane.showMessageDialog(MyListsDialog.this, deleteResult[1], "Success", JOptionPane.INFORMATION_MESSAGE);
+                            loadUserLists(); // Refresh the list
+                            // Clear the books panel since the selected list was deleted
+                            booksPanel.removeAll();
+                            booksPanel.revalidate();
+                            booksPanel.repaint();
+                            statusLabel.setText("Select a list to view books");
+                        } else {
+                            JOptionPane.showMessageDialog(MyListsDialog.this, deleteResult[1], "Error", JOptionPane.ERROR_MESSAGE);
+                        }
+                    } catch (Exception e) {
+                        JOptionPane.showMessageDialog(MyListsDialog.this, "Error deleting list: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            };
+            worker.execute();
+        }
     }
 }

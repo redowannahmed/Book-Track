@@ -9,7 +9,7 @@ CREATE SEQUENCE seq_rating_id START WITH 1 INCREMENT BY 1;
 CREATE SEQUENCE seq_interaction_id START WITH 1 INCREMENT BY 1;
 
 -- =====================================================
--- CORE TABLES
+-- CORE TABLES 
 -- =====================================================
 
 -- Users table - stores user account information

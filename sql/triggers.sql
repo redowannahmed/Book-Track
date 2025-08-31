@@ -498,6 +498,30 @@ BEGIN
 END;
 /
 
+-- Trigger to update books_count in custom_lists when books are added
+CREATE OR REPLACE TRIGGER trg_update_list_count_add
+    AFTER INSERT ON custom_list_books
+    FOR EACH ROW
+BEGIN
+    UPDATE custom_lists 
+    SET books_count = books_count + 1,
+        updated_at = CURRENT_TIMESTAMP
+    WHERE list_id = :NEW.list_id;
+END;
+/
+
+-- Trigger to update books_count in custom_lists when books are removed
+CREATE OR REPLACE TRIGGER trg_update_list_count_remove
+    AFTER DELETE ON custom_list_books
+    FOR EACH ROW
+BEGIN
+    UPDATE custom_lists 
+    SET books_count = books_count - 1,
+        updated_at = CURRENT_TIMESTAMP
+    WHERE list_id = :OLD.list_id;
+END;
+/
+
 -- NOTE: Duplicate prevention is handled by UNIQUE constraints in the table DDL
 -- No triggers needed for duplicate prevention as the database constraints will handle this
 -- UNIQUE constraint on (user_id, book_id) in both book_ratings and book_reviews tables

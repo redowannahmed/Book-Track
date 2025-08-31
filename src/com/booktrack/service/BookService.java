@@ -67,33 +67,15 @@ public class BookService {
     
     /**
      * Get books for landing page (popular books)
+     * Optimized for speed - skips individual DB lookups
      * @return List of popular books
      */
     public List<Book> getLandingPageBooks() {
-        // Fetch candidate books from Google, but display rating from OUR database only
+        // Fetch books from Google Books API
         List<Book> books = googleBooksService.getLandingPageBooks();
 
-        // For the landing page, ignore any API-provided rating; show app-wide average from DB
-        for (Book b : books) {
-            // Default to no rating
-            b.setAverageRating(0);
-            b.setRatingsCount(0);
-
-            // If this book already exists in our DB, overlay the DB aggregate rating
-            try {
-                Integer bookId = findBookIdByGoogleId(b.getGoogleBooksId());
-                if (bookId != null) {
-                    Book dbBook = bookDAO.getBookById(bookId);
-                    if (dbBook != null) {
-                        b.setAverageRating(dbBook.getAverageRating());
-                        b.setRatingsCount(dbBook.getRatingsCount());
-                    }
-                }
-            } catch (Exception ignored) {
-                // Non-fatal for landing page; keep default 0 rating if DB lookup fails
-            }
-        }
-
+        // For performance, we'll skip individual database lookups for landing page
+        // The books already have default values (0.0 for rating, 0 for count)
         return books;
     }
     

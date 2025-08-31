@@ -47,20 +47,48 @@ public class RegistrationForm extends JFrame {
     }
     
     private void initializeComponents() {
-        // Create components
-        usernameField = new JTextField(20);
-        emailField = new JTextField(20);
-        passwordField = new JPasswordField(20);
-        confirmPasswordField = new JPasswordField(20);
-        firstNameField = new JTextField(20);
-        lastNameField = new JTextField(20);
-        registerButton = new JButton("Register");
+        // Create components with larger sizes
+        usernameField = new JTextField(25);
+        emailField = new JTextField(25);
+        passwordField = new JPasswordField(25);
+        confirmPasswordField = new JPasswordField(25);
+        firstNameField = new JTextField(25);
+        lastNameField = new JTextField(25);
+        registerButton = new JButton("Create Account");
         backToLoginButton = new JButton("Back to Login");
         statusLabel = new JLabel(" ");
         passwordStrengthLabel = new JLabel(" ");
         showPasswordCheckBox = new JCheckBox("Show Passwords");
         
-        // Set component properties
+        // Style text fields
+        Dimension fieldSize = new Dimension(320, 40);
+        Font fieldFont = new Font(Font.SANS_SERIF, Font.PLAIN, 13);
+        Color fieldBg = new Color(248, 249, 250);
+        
+        JTextField[] fields = {usernameField, emailField, firstNameField, lastNameField};
+        JPasswordField[] passFields = {passwordField, confirmPasswordField};
+        
+        for (JTextField field : fields) {
+            field.setPreferredSize(fieldSize);
+            field.setFont(fieldFont);
+            field.setBackground(fieldBg);
+            field.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(189, 195, 199), 1),
+                BorderFactory.createEmptyBorder(10, 15, 10, 15)
+            ));
+        }
+        
+        for (JPasswordField field : passFields) {
+            field.setPreferredSize(fieldSize);
+            field.setFont(fieldFont);
+            field.setBackground(fieldBg);
+            field.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(189, 195, 199), 1),
+                BorderFactory.createEmptyBorder(10, 15, 10, 15)
+            ));
+        }
+        
+        // Set tooltips
         usernameField.setToolTipText("3-50 characters, letters, numbers, and underscores only");
         emailField.setToolTipText("Enter a valid email address");
         passwordField.setToolTipText("At least 8 characters with uppercase, lowercase, number, and special character");
@@ -68,148 +96,240 @@ public class RegistrationForm extends JFrame {
         firstNameField.setToolTipText("Your first name (optional)");
         lastNameField.setToolTipText("Your last name (optional)");
         
+        // Style buttons
+        registerButton.setPreferredSize(new Dimension(160, 40));
+        registerButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 13));
+        registerButton.setBackground(new Color(46, 204, 113));
+        registerButton.setForeground(Color.WHITE);
+        registerButton.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+        registerButton.setFocusPainted(false);
+        registerButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        
+        backToLoginButton.setPreferredSize(new Dimension(160, 40));
+        backToLoginButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 13));
+        backToLoginButton.setBackground(new Color(149, 165, 166));
+        backToLoginButton.setForeground(Color.WHITE);
+        backToLoginButton.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+        backToLoginButton.setFocusPainted(false);
+        backToLoginButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        
+        // Style checkbox
+        showPasswordCheckBox.setBackground(new Color(245, 247, 250));
+        showPasswordCheckBox.setForeground(new Color(52, 73, 94));
+        showPasswordCheckBox.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
+        
         // Set label properties
         statusLabel.setForeground(Color.RED);
         statusLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        statusLabel.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
         passwordStrengthLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        passwordStrengthLabel.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 11));
         
-        // Set button properties
-        registerButton.setPreferredSize(new Dimension(120, 30));
-        backToLoginButton.setPreferredSize(new Dimension(120, 30));
+        // Add hover effects
+        addButtonHoverEffect(registerButton, new Color(46, 204, 113), new Color(39, 174, 96));
+        addButtonHoverEffect(backToLoginButton, new Color(149, 165, 166), new Color(127, 140, 141));
         
         // Make register button default
         getRootPane().setDefaultButton(registerButton);
     }
     
+    private void addButtonHoverEffect(JButton button, Color normalColor, Color hoverColor) {
+        button.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseEntered(java.awt.event.MouseEvent e) {
+                button.setBackground(hoverColor);
+            }
+            
+            @Override
+            public void mouseExited(java.awt.event.MouseEvent e) {
+                button.setBackground(normalColor);
+            }
+        });
+    }
+    
     private void setupLayout() {
         setLayout(new BorderLayout());
+        getContentPane().setBackground(new Color(245, 247, 250));
         
-        // Create main panel
-        JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
-        mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        // Create main panel with better spacing
+        JPanel mainPanel = new JPanel(new BorderLayout(0, 15));
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(25, 35, 25, 35));
+        mainPanel.setBackground(new Color(245, 247, 250));
         
-        // Title panel
-        JPanel titlePanel = new JPanel();
-        JLabel titleLabel = new JLabel("Create New Account");
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 20));
-        titleLabel.setForeground(new Color(41, 128, 185));
-        titlePanel.add(titleLabel);
+        // Header panel with gradient background
+        JPanel headerPanel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2d = (Graphics2D) g;
+                g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+                GradientPaint gp = new GradientPaint(
+                    0, 0, new Color(46, 204, 113),
+                    0, getHeight(), new Color(39, 174, 96)
+                );
+                g2d.setPaint(gp);
+                g2d.fillRect(0, 0, getWidth(), getHeight());
+            }
+        };
+        headerPanel.setLayout(new BoxLayout(headerPanel, BoxLayout.Y_AXIS));
+        headerPanel.setBorder(BorderFactory.createEmptyBorder(20, 30, 20, 30));
+        headerPanel.setPreferredSize(new Dimension(0, 100));
+        
+        // Title
+        JLabel titleLabel = new JLabel("✨ Join BookTrack");
+        titleLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 24));
+        titleLabel.setForeground(Color.WHITE);
+        titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        
+        JLabel subtitleLabel = new JLabel("Start your reading journey today");
+        subtitleLabel.setFont(new Font(Font.SANS_SERIF, Font.ITALIC, 13));
+        subtitleLabel.setForeground(new Color(236, 240, 241));
+        subtitleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        
+        headerPanel.add(Box.createVerticalGlue());
+        headerPanel.add(titleLabel);
+        headerPanel.add(Box.createVerticalStrut(6));
+        headerPanel.add(subtitleLabel);
+        headerPanel.add(Box.createVerticalGlue());
         
         // Form panel
-        JPanel formPanel = new JPanel(new GridBagLayout());
-        formPanel.setBorder(BorderFactory.createTitledBorder("Registration Information"));
+        JPanel formPanel = new JPanel();
+        formPanel.setLayout(new BoxLayout(formPanel, BoxLayout.Y_AXIS));
+        formPanel.setBackground(Color.WHITE);
+        formPanel.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(189, 195, 199), 1),
+            BorderFactory.createEmptyBorder(20, 30, 20, 30)
+        ));
         
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(5, 5, 5, 5);
+        // Welcome text
+        JLabel welcomeLabel = new JLabel("Create Your Account");
+        welcomeLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 17));
+        welcomeLabel.setForeground(new Color(52, 73, 94));
+        welcomeLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        
+        JLabel instructionLabel = new JLabel("Fill in the information below to get started");
+        instructionLabel.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
+        instructionLabel.setForeground(new Color(108, 117, 125));
+        instructionLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        
+        formPanel.add(welcomeLabel);
+        formPanel.add(Box.createVerticalStrut(4));
+        formPanel.add(instructionLabel);
+        formPanel.add(Box.createVerticalStrut(18));
+        
+        // Create two-column layout for name fields
+        JPanel namePanel = createTwoColumnPanel("First Name", firstNameField, "Last Name", lastNameField);
+        formPanel.add(namePanel);
+        formPanel.add(Box.createVerticalStrut(10));
         
         // Username field
-        gbc.gridx = 0; gbc.gridy = 0;
-        gbc.anchor = GridBagConstraints.EAST;
-        formPanel.add(new JLabel("Username: *"), gbc);
+        addFieldToPanel(formPanel, "Username *", usernameField);
+        formPanel.add(Box.createVerticalStrut(10));
         
-        gbc.gridx = 1; gbc.gridy = 0;
-        gbc.anchor = GridBagConstraints.WEST;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        formPanel.add(usernameField, gbc);
-        
-        // Email field
-        gbc.gridx = 0; gbc.gridy = 1;
-        gbc.anchor = GridBagConstraints.EAST;
-        gbc.fill = GridBagConstraints.NONE;
-        formPanel.add(new JLabel("Email: *"), gbc);
-        
-        gbc.gridx = 1; gbc.gridy = 1;
-        gbc.anchor = GridBagConstraints.WEST;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        formPanel.add(emailField, gbc);
-        
-        // First name field
-        gbc.gridx = 0; gbc.gridy = 2;
-        gbc.anchor = GridBagConstraints.EAST;
-        gbc.fill = GridBagConstraints.NONE;
-        formPanel.add(new JLabel("First Name:"), gbc);
-        
-        gbc.gridx = 1; gbc.gridy = 2;
-        gbc.anchor = GridBagConstraints.WEST;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        formPanel.add(firstNameField, gbc);
-        
-        // Last name field
-        gbc.gridx = 0; gbc.gridy = 3;
-        gbc.anchor = GridBagConstraints.EAST;
-        gbc.fill = GridBagConstraints.NONE;
-        formPanel.add(new JLabel("Last Name:"), gbc);
-        
-        gbc.gridx = 1; gbc.gridy = 3;
-        gbc.anchor = GridBagConstraints.WEST;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        formPanel.add(lastNameField, gbc);
+        // Email field  
+        addFieldToPanel(formPanel, "Email Address *", emailField);
+        formPanel.add(Box.createVerticalStrut(10));
         
         // Password field
-        gbc.gridx = 0; gbc.gridy = 4;
-        gbc.anchor = GridBagConstraints.EAST;
-        gbc.fill = GridBagConstraints.NONE;
-        formPanel.add(new JLabel("Password: *"), gbc);
+        addFieldToPanel(formPanel, "Password *", passwordField);
         
-        gbc.gridx = 1; gbc.gridy = 4;
-        gbc.anchor = GridBagConstraints.WEST;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        formPanel.add(passwordField, gbc);
-        
-        // Password strength label
-        gbc.gridx = 1; gbc.gridy = 5;
-        gbc.anchor = GridBagConstraints.WEST;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        formPanel.add(passwordStrengthLabel, gbc);
+        // Password strength indicator
+        passwordStrengthLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        formPanel.add(Box.createVerticalStrut(4));
+        formPanel.add(passwordStrengthLabel);
+        formPanel.add(Box.createVerticalStrut(10));
         
         // Confirm password field
-        gbc.gridx = 0; gbc.gridy = 6;
-        gbc.anchor = GridBagConstraints.EAST;
-        gbc.fill = GridBagConstraints.NONE;
-        formPanel.add(new JLabel("Confirm Password: *"), gbc);
-        
-        gbc.gridx = 1; gbc.gridy = 6;
-        gbc.anchor = GridBagConstraints.WEST;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        formPanel.add(confirmPasswordField, gbc);
+        addFieldToPanel(formPanel, "Confirm Password *", confirmPasswordField);
+        formPanel.add(Box.createVerticalStrut(8));
         
         // Show password checkbox
-        gbc.gridx = 1; gbc.gridy = 7;
-        gbc.anchor = GridBagConstraints.WEST;
-        gbc.fill = GridBagConstraints.NONE;
-        formPanel.add(showPasswordCheckBox, gbc);
+        showPasswordCheckBox.setAlignmentX(Component.CENTER_ALIGNMENT);
+        formPanel.add(showPasswordCheckBox);
+        formPanel.add(Box.createVerticalStrut(12));
         
         // Required fields note
-        gbc.gridx = 0; gbc.gridy = 8;
-        gbc.gridwidth = 2;
-        gbc.anchor = GridBagConstraints.CENTER;
         JLabel requiredLabel = new JLabel("* Required fields");
-        requiredLabel.setFont(new Font("Arial", Font.ITALIC, 10));
-        requiredLabel.setForeground(Color.GRAY);
-        formPanel.add(requiredLabel, gbc);
+        requiredLabel.setFont(new Font(Font.SANS_SERIF, Font.ITALIC, 11));
+        requiredLabel.setForeground(new Color(108, 117, 125));
+        requiredLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        formPanel.add(requiredLabel);
+        formPanel.add(Box.createVerticalStrut(15));
         
         // Button panel
-        JPanel buttonPanel = new JPanel(new FlowLayout());
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 0));
+        buttonPanel.setBackground(Color.WHITE);
         buttonPanel.add(registerButton);
         buttonPanel.add(backToLoginButton);
         
+        formPanel.add(buttonPanel);
+        formPanel.add(Box.createVerticalStrut(10));
+        
         // Status panel
         JPanel statusPanel = new JPanel();
+        statusPanel.setBackground(Color.WHITE);
         statusPanel.add(statusLabel);
+        formPanel.add(statusPanel);
         
         // Add to main panel
-        mainPanel.add(titlePanel, BorderLayout.NORTH);
+        mainPanel.add(headerPanel, BorderLayout.NORTH);
         mainPanel.add(formPanel, BorderLayout.CENTER);
         
-        JPanel bottomPanel = new JPanel(new BorderLayout());
-        bottomPanel.add(buttonPanel, BorderLayout.CENTER);
-        bottomPanel.add(statusPanel, BorderLayout.SOUTH);
-        
-        mainPanel.add(bottomPanel, BorderLayout.SOUTH);
-        
         add(mainPanel);
+        
+        // Set window size - increased height significantly to ensure all components are visible
+        setPreferredSize(new Dimension(520, 850));
+        pack();
     }
     
+    private JPanel createTwoColumnPanel(String label1, JTextField field1, String label2, JTextField field2) {
+        JPanel panel = new JPanel(new GridLayout(2, 2, 15, 8));
+        panel.setBackground(Color.WHITE);
+        panel.setMaximumSize(new Dimension(400, 90));
+        
+        JLabel lbl1 = new JLabel(label1);
+        lbl1.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 13));
+        lbl1.setForeground(new Color(52, 73, 94));
+        
+        JLabel lbl2 = new JLabel(label2);
+        lbl2.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 13));
+        lbl2.setForeground(new Color(52, 73, 94));
+        
+        // Adjust field sizes for two columns
+        field1.setPreferredSize(new Dimension(145, 40));
+        field1.setMaximumSize(new Dimension(145, 40));
+        field2.setPreferredSize(new Dimension(145, 40));
+        field2.setMaximumSize(new Dimension(145, 40));
+        
+        panel.add(lbl1);
+        panel.add(lbl2);
+        panel.add(field1);
+        panel.add(field2);
+        
+        JPanel wrapper = new JPanel();
+        wrapper.setLayout(new BoxLayout(wrapper, BoxLayout.X_AXIS));
+        wrapper.setBackground(Color.WHITE);
+        wrapper.add(Box.createHorizontalGlue());
+        wrapper.add(panel);
+        wrapper.add(Box.createHorizontalGlue());
+        
+        return wrapper;
+    }
+    
+    private void addFieldToPanel(JPanel parent, String labelText, JTextField field) {
+        JLabel label = new JLabel(labelText);
+        label.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 13));
+        label.setForeground(new Color(52, 73, 94));
+        label.setAlignmentX(Component.CENTER_ALIGNMENT);
+        
+        field.setAlignmentX(Component.CENTER_ALIGNMENT);
+        field.setMaximumSize(field.getPreferredSize());
+        
+        parent.add(label);
+        parent.add(Box.createVerticalStrut(8));
+        parent.add(field);
+    }
+
     private void setupEventListeners() {
         // Register button action
         registerButton.addActionListener(new ActionListener() {

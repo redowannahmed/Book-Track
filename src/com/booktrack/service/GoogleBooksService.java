@@ -98,18 +98,19 @@ public class GoogleBooksService {
     }
     
     /**
-     * Get random popular books for landing page
+     * Get popular books for landing page - optimized for speed
      * @return List of books for display
      */
     public List<Book> getLandingPageBooks() {
-        List<Book> books = new ArrayList<>();
+        // Use a single API call with a broad query for popular/trending books
+        // This will be much faster than multiple API calls
+        List<Book> books = searchBooks("bestseller fiction 2024 popular", DEFAULT_MAX_RESULTS);
         
-        // Mix different types of books for variety - focus on English content
-        books.addAll(searchBooks("bestseller english", 3));
-        books.addAll(searchBooks("fiction english language", 3));
-        books.addAll(searchBooks("mystery thriller english", 2));
-        books.addAll(searchBooks("romance novel english", 2));
-        books.addAll(searchBooks("science fiction english", 2));
+        // If the query doesn't return enough books, try a fallback
+        if (books.size() < DEFAULT_MAX_RESULTS) {
+            List<Book> fallbackBooks = searchBooks("popular books english", DEFAULT_MAX_RESULTS - books.size());
+            books.addAll(fallbackBooks);
+        }
         
         return books.size() > DEFAULT_MAX_RESULTS ? 
                books.subList(0, DEFAULT_MAX_RESULTS) : books;

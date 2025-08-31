@@ -257,7 +257,7 @@ EXCEPTION
 END sp_delete_rating;
 /
 
--- Procedure to delete a book review
+-- Pro 
 CREATE OR REPLACE PROCEDURE sp_delete_review(
     p_user_id IN NUMBER,
     p_book_id IN NUMBER,
