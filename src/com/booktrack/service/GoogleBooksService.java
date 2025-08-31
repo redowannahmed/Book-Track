@@ -54,11 +54,11 @@ public class GoogleBooksService {
      * @return List of popular books
      */
     public List<Book> getPopularBooks() {
-        // Use a mix of popular search terms to get diverse results
+        // Use a mix of popular search terms to get diverse results - focus on English
         String[] popularQueries = {
-            "bestseller fiction",
-            "popular novels 2024",
-            "award winning books"
+            "bestseller fiction english",
+            "popular novels 2024 english",
+            "award winning books english language"
         };
         
         List<Book> allBooks = new ArrayList<>();
@@ -77,7 +77,7 @@ public class GoogleBooksService {
      * @return List of trending books
      */
     public List<Book> getTrendingBooks() {
-        return searchBooks("subject:fiction+newer:2023", DEFAULT_MAX_RESULTS);
+        return searchBooks("subject:fiction+newer:2023+language:en", DEFAULT_MAX_RESULTS);
     }
     
     /**
@@ -85,7 +85,7 @@ public class GoogleBooksService {
      * @return List of classic books
      */
     public List<Book> getClassicBooks() {
-        return searchBooks("subject:classics+author:\"Charles Dickens\"+OR+author:\"Jane Austen\"+OR+author:\"Mark Twain\"", DEFAULT_MAX_RESULTS);
+        return searchBooks("subject:classics+language:en+author:\"Charles Dickens\"+OR+author:\"Jane Austen\"+OR+author:\"Mark Twain\"", DEFAULT_MAX_RESULTS);
     }
     
     /**
@@ -104,12 +104,12 @@ public class GoogleBooksService {
     public List<Book> getLandingPageBooks() {
         List<Book> books = new ArrayList<>();
         
-        // Mix different types of books for variety
-        books.addAll(searchBooks("bestseller", 3));
-        books.addAll(searchBooks("fiction", 3));
-        books.addAll(searchBooks("mystery", 2));
-        books.addAll(searchBooks("romance", 2));
-        books.addAll(searchBooks("sci-fi", 2));
+        // Mix different types of books for variety - focus on English content
+        books.addAll(searchBooks("bestseller english", 3));
+        books.addAll(searchBooks("fiction english language", 3));
+        books.addAll(searchBooks("mystery thriller english", 2));
+        books.addAll(searchBooks("romance novel english", 2));
+        books.addAll(searchBooks("science fiction english", 2));
         
         return books.size() > DEFAULT_MAX_RESULTS ? 
                books.subList(0, DEFAULT_MAX_RESULTS) : books;
@@ -126,7 +126,8 @@ public class GoogleBooksService {
             URI uri = URI.create(urlString);
             HttpURLConnection connection = (HttpURLConnection) uri.toURL().openConnection();
             connection.setRequestMethod("GET");
-            connection.setRequestProperty("Accept", "application/json");
+            connection.setRequestProperty("Accept", "application/json; charset=UTF-8");
+            connection.setRequestProperty("Accept-Charset", "UTF-8");
             connection.setConnectTimeout(10000); // 10 seconds
             connection.setReadTimeout(10000); // 10 seconds
             
@@ -134,7 +135,7 @@ public class GoogleBooksService {
             System.out.println("Response code: " + responseCode);
             if (responseCode == HttpURLConnection.HTTP_OK) {
                 BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(connection.getInputStream())
+                    new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8)
                 );
                 
                 StringBuilder response = new StringBuilder();
@@ -151,7 +152,7 @@ public class GoogleBooksService {
                 System.err.println("HTTP Error: " + responseCode);
                 // Try to read error response
                 BufferedReader errorReader = new BufferedReader(
-                    new InputStreamReader(connection.getErrorStream())
+                    new InputStreamReader(connection.getErrorStream(), StandardCharsets.UTF_8)
                 );
                 StringBuilder errorResponse = new StringBuilder();
                 String errorLine;
@@ -300,6 +301,11 @@ public class GoogleBooksService {
             // Extract title
             String title = extractJsonValue(bookJson, "title");
             if (title != null && !title.trim().isEmpty()) {
+                // Filter out non-English titles
+                if (!isEnglishText(title)) {
+                    System.out.println("Skipping non-English book: " + title);
+                    return null; // Skip books with non-English titles
+                }
                 book.setTitle(title);
             } else {
                 return null; // Skip books without title
@@ -309,7 +315,7 @@ public class GoogleBooksService {
             String authorsSection = extractJsonSection(bookJson, "authors");
             if (authorsSection != null) {
                 String author = extractFirstArrayValue(authorsSection);
-                if (author != null) {
+                if (author != null && isEnglishText(author)) {
                     book.setAuthors(new String[]{author});
                 }
             }
@@ -357,15 +363,85 @@ public class GoogleBooksService {
     }
     
     /**
-     * Extract a JSON value using regex
+     * Extract a JSON value using regex - simplified to avoid catastrophic backtracking
      */
     private String extractJsonValue(String json, String key) {
-        Pattern pattern = Pattern.compile("\"" + key + "\"\\s*:\\s*\"([^\"]*?)\"");
-        Matcher matcher = pattern.matcher(json);
+        // Use a simpler pattern that avoids catastrophic backtracking
+        String pattern = "\"" + key + "\"\\s*:\\s*\"([^\"]+)\"";
+        Pattern p = Pattern.compile(pattern);
+        Matcher matcher = p.matcher(json);
         if (matcher.find()) {
-            return matcher.group(1);
+            String value = matcher.group(1);
+            // Decode Unicode escape sequences
+            return decodeUnicodeEscapes(value);
         }
         return null;
+    }
+    
+    /**
+     * Decode Unicode escape sequences in JSON strings
+     * @param input String with potential Unicode escapes
+     * @return Decoded string
+     */
+    private String decodeUnicodeEscapes(String input) {
+        if (input == null) return null;
+        
+        StringBuilder result = new StringBuilder();
+        int length = input.length();
+        
+        for (int i = 0; i < length; i++) {
+            char c = input.charAt(i);
+            
+            if (c == '\\' && i + 1 < length) {
+                char next = input.charAt(i + 1);
+                
+                switch (next) {
+                    case 'u':
+                        // Unicode escape sequence \\uXXXX
+                        if (i + 5 < length) {
+                            try {
+                                String hex = input.substring(i + 2, i + 6);
+                                int codePoint = Integer.parseInt(hex, 16);
+                                result.append((char) codePoint);
+                                i += 5; // Skip the entire escape sequence
+                            } catch (NumberFormatException e) {
+                                // Invalid Unicode escape, keep as is
+                                result.append(c);
+                            }
+                        } else {
+                            result.append(c);
+                        }
+                        break;
+                    case 'n':
+                        result.append('\n');
+                        i++;
+                        break;
+                    case 't':
+                        result.append('\t');
+                        i++;
+                        break;
+                    case 'r':
+                        result.append('\r');
+                        i++;
+                        break;
+                    case '\\':
+                        result.append('\\');
+                        i++;
+                        break;
+                    case '"':
+                        result.append('"');
+                        i++;
+                        break;
+                    default:
+                        result.append(c);
+                        break;
+                }
+            } else {
+                result.append(c);
+            }
+        }
+        
+        return result.toString();
     }
     
     /**
@@ -381,19 +457,19 @@ public class GoogleBooksService {
     }
     
     /**
-     * Extract first value from a JSON array
+     * Extract first value from a JSON array - simplified pattern
      */
     private String extractFirstArrayValue(String arrayJson) {
         Pattern pattern = Pattern.compile("\"([^\"]+)\"");
         Matcher matcher = pattern.matcher(arrayJson);
         if (matcher.find()) {
-            return matcher.group(1);
+            return decodeUnicodeEscapes(matcher.group(1));
         }
         return null;
     }
     
     /**
-     * Extract all values from a JSON array
+     * Extract all values from a JSON array - simplified pattern
      */
     private String[] extractArrayValues(String arrayJson) {
         Pattern pattern = Pattern.compile("\"([^\"]+)\"");
@@ -401,7 +477,7 @@ public class GoogleBooksService {
         java.util.List<String> values = new java.util.ArrayList<>();
         
         while (matcher.find()) {
-            values.add(matcher.group(1));
+            values.add(decodeUnicodeEscapes(matcher.group(1)));
         }
         
         return values.isEmpty() ? null : values.toArray(new String[0]);
@@ -475,5 +551,40 @@ public class GoogleBooksService {
         
         System.out.println("Created " + books.size() + " sample books");
         return books;
+    }
+    
+    /**
+     * Check if text is primarily English (basic Latin characters)
+     * @param text Text to check
+     * @return true if text appears to be English, false otherwise
+     */
+    private boolean isEnglishText(String text) {
+        if (text == null || text.trim().isEmpty()) {
+            return false;
+        }
+        
+        // Count characters that are basic Latin (English)
+        int totalChars = 0;
+        int englishChars = 0;
+        
+        for (char c : text.toCharArray()) {
+            // Skip spaces, punctuation, and numbers
+            if (Character.isLetter(c)) {
+                totalChars++;
+                // Basic Latin range (English letters)
+                if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
+                    englishChars++;
+                }
+            }
+        }
+        
+        // If no letters at all, consider it English (might be numbers/symbols only)
+        if (totalChars == 0) {
+            return true;
+        }
+        
+        // Require at least 80% of letters to be English
+        double englishRatio = (double) englishChars / totalChars;
+        return englishRatio >= 0.8;
     }
 }

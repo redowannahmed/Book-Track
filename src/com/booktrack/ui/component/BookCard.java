@@ -77,7 +77,7 @@ public class BookCard extends JPanel {
         
         // Title
         titleLabel = new JLabel(truncateText(book.getTitle(), 20));
-        titleLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
+        titleLabel.setFont(createUnicodeFont(Font.BOLD, 12));
         titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
         titleLabel.setToolTipText(book.getTitle());
         
@@ -100,14 +100,14 @@ public class BookCard extends JPanel {
         }
         
         authorLabel = new JLabel(truncateText(authorText, 25));
-        authorLabel.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 10));
+        authorLabel.setFont(createUnicodeFont(Font.PLAIN, 10));
         authorLabel.setForeground(Color.GRAY);
         authorLabel.setHorizontalAlignment(SwingConstants.CENTER);
         authorLabel.setToolTipText(authorText);
         
         // Rating
         ratingLabel = new JLabel(formatRating(book.getAverageRating()));
-        ratingLabel.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 10));
+        ratingLabel.setFont(createUnicodeFont(Font.PLAIN, 10));
         ratingLabel.setForeground(Color.ORANGE.darker());
         ratingLabel.setHorizontalAlignment(SwingConstants.CENTER);
         
@@ -163,7 +163,7 @@ public class BookCard extends JPanel {
     private void setPlaceholderImage() {
         imageLabel.setText("<html><center>📚<br>" + 
                           truncateText(book.getTitle(), 15) + "</center></html>");
-        imageLabel.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 10));
+        imageLabel.setFont(createUnicodeFont(Font.PLAIN, 10));
         imageLabel.setForeground(Color.DARK_GRAY);
     }
     
@@ -537,6 +537,34 @@ public class BookCard extends JPanel {
             return "★ " + String.format("%.1f", rating);
         }
         return "☆ No rating";
+    }
+    
+    /**
+     * Create a font that supports Unicode characters better
+     * @param style Font style (Font.PLAIN, Font.BOLD, etc.)
+     * @param size Font size
+     * @return Font that supports Unicode characters
+     */
+    private Font createUnicodeFont(int style, int size) {
+        // Try different fonts that have better Unicode support
+        String[] fontNames = {
+            "Arial Unicode MS",      // Good Unicode support on Windows
+            "Lucida Sans Unicode",   // Good Unicode support
+            "Dialog",                // Java's logical font, usually supports Unicode well
+            "SansSerif",             // Fallback logical font
+            Font.SANS_SERIF          // Final fallback
+        };
+        
+        for (String fontName : fontNames) {
+            Font font = new Font(fontName, style, size);
+            // Check if the font can display common Unicode characters
+            if (font.canDisplay('★') && font.canDisplay('☆')) {
+                return font;
+            }
+        }
+        
+        // If all else fails, return the default font
+        return new Font(Font.SANS_SERIF, style, size);
     }
     
     public Book getBook() {
