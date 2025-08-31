@@ -239,9 +239,20 @@ RETURN SYS_REFCURSOR AS
 BEGIN
     OPEN books_cursor FOR
         SELECT b.book_id, b.google_books_id, b.title, b.subtitle, 
-               b.description, b.publisher, b.published_date, b.page_count,
+               CASE 
+                   WHEN b.description IS NOT NULL THEN 
+                       SUBSTR(b.description, 1, 4000)  -- Convert CLOB to VARCHAR2
+                   ELSE 
+                       NULL 
+               END as description,
+               b.publisher, b.published_date, b.page_count,
                b.cover_image_url, b.average_rating, b.ratings_count,
-               clb.date_added, clb.notes
+               clb.date_added, clb.notes,
+               -- Get authors as concatenated string
+               (SELECT LISTAGG(a.author_name, ', ') WITHIN GROUP (ORDER BY a.author_name)
+                FROM authors a
+                JOIN book_authors ba ON a.author_id = ba.author_id
+                WHERE ba.book_id = b.book_id) as authors
         FROM books b
         INNER JOIN custom_list_books clb ON b.book_id = clb.book_id
         WHERE clb.list_id = p_list_id
@@ -257,14 +268,20 @@ RETURN SYS_REFCURSOR AS
     books_cursor SYS_REFCURSOR;
 BEGIN
     OPEN books_cursor FOR
-        SELECT book_id, google_books_id, title, subtitle, description,
+        SELECT book_id, google_books_id, title, subtitle, 
+               CASE 
+                   WHEN description IS NOT NULL THEN 
+                       SUBSTR(description, 1, 4000)  -- Convert CLOB to VARCHAR2
+                   ELSE 
+                       NULL 
+               END as description,
                publisher, published_date, page_count, cover_image_url,
                average_rating, ratings_count, preview_link, info_link
         FROM books 
         WHERE UPPER(title) LIKE UPPER('%' || p_search_term || '%')
            OR UPPER(subtitle) LIKE UPPER('%' || p_search_term || '%')
            OR UPPER(publisher) LIKE UPPER('%' || p_search_term || '%')
-           OR UPPER(description) LIKE UPPER('%' || p_search_term || '%')
+           OR UPPER(SUBSTR(description, 1, 4000)) LIKE UPPER('%' || p_search_term || '%')
         ORDER BY 
             CASE WHEN UPPER(title) LIKE UPPER(p_search_term || '%') THEN 1 ELSE 2 END,
             average_rating DESC,
@@ -280,7 +297,13 @@ RETURN SYS_REFCURSOR AS
     book_cursor SYS_REFCURSOR;
 BEGIN
     OPEN book_cursor FOR
-        SELECT book_id, google_books_id, title, subtitle, description,
+        SELECT book_id, google_books_id, title, subtitle, 
+               CASE 
+                   WHEN description IS NOT NULL THEN 
+                       SUBSTR(description, 1, 4000)  -- Convert CLOB to VARCHAR2, max 4000 chars
+                   ELSE 
+                       NULL 
+               END as description,
                isbn_10, isbn_13, published_date, publisher, page_count,
                language_code, cover_image_url, preview_link, info_link,
                average_rating, ratings_count, total_reviews, popularity_score,
